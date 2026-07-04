@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Local data & generated output (not committed)
+data/
+output/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
