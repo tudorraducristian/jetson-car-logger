@@ -64,3 +64,19 @@ def test_read_folder_builds_one_row_per_image(tmp_path):
         PlateRow(filename="car1.jpg", plate_text="CJ23XZI", confidence=0.95),
         PlateRow(filename="car2.jpg", plate_text="", confidence=0.0),
     ]
+
+
+from openpyxl import load_workbook
+
+from plate_reader import write_excel
+
+
+def test_write_excel_writes_header_and_rows(tmp_path):
+    rows = [PlateRow(filename="car1.jpg", plate_text="CJ23XZI", confidence=0.95)]
+    out_path = tmp_path / "plates.xlsx"
+
+    write_excel(rows, out_path)
+
+    worksheet = load_workbook(out_path).active
+    assert [c.value for c in worksheet[1]] == ["filename", "plate_text", "confidence"]
+    assert [c.value for c in worksheet[2]] == ["car1.jpg", "CJ23XZI", 0.95]

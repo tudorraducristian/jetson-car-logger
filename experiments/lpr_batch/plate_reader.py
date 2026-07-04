@@ -4,6 +4,8 @@ import statistics
 from dataclasses import dataclass
 from pathlib import Path
 
+from openpyxl import Workbook
+
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp"}
 
 
@@ -61,3 +63,14 @@ def read_folder(folder, predict):
             )
         )
     return rows
+
+
+def write_excel(rows, out_path):
+    """Write rows to an .xlsx with a header line."""
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "plates"
+    worksheet.append(["filename", "plate_text", "confidence"])
+    for row in rows:
+        worksheet.append([row.filename, row.plate_text, row.confidence])
+    workbook.save(str(out_path))
