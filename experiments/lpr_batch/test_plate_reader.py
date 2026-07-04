@@ -66,6 +66,24 @@ def test_read_folder_builds_one_row_per_image(tmp_path):
     ]
 
 
+def test_read_folder_continues_when_predict_raises(tmp_path, capsys):
+    (tmp_path / "bad.jpg").write_bytes(b"x")
+    (tmp_path / "good.jpg").write_bytes(b"x")
+
+    def flaky_predict(image_path):
+        if Path(image_path).name == "bad.jpg":
+            raise ValueError("corrupt image")
+        return [SimpleNamespace(ocr=SimpleNamespace(text="OK123", confidence=0.9))]
+
+    rows = read_folder(tmp_path, flaky_predict)
+
+    assert rows == [
+        PlateRow(filename="bad.jpg", plate_text="", confidence=0.0),
+        PlateRow(filename="good.jpg", plate_text="OK123", confidence=0.9),
+    ]
+    assert "bad.jpg" in capsys.readouterr().err
+
+
 from openpyxl import load_workbook
 
 from plate_reader import write_excel

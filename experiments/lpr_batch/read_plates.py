@@ -26,6 +26,11 @@ def main():
     )
     args = parser.parse_args()
 
+    # Validate the input before build_alpr(): loading the model is slow and
+    # a path typo should fail immediately with a clear message.
+    if not Path(args.folder).is_dir():
+        parser.error(f"folder not found or not a directory: {args.folder}")
+
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 

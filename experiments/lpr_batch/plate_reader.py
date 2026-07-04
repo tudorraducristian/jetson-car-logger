@@ -1,6 +1,7 @@
 """Folder -> plate rows -> Excel. Pure, testable helpers (no model here)."""
 
 import statistics
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,10 +52,19 @@ class PlateRow:
 
 
 def read_folder(folder, predict):
-    """Run ``predict`` on every image in ``folder`` and return one row each."""
+    """Run ``predict`` on every image in ``folder`` and return one row each.
+
+    A failing image (corrupt file, inference error) gets a blank row and a
+    warning on stderr instead of aborting the rest of the batch.
+    """
     rows = []
     for image_path in list_images(folder):
-        text, confidence = best_plate(predict(str(image_path)))
+        try:
+            results = predict(str(image_path))
+        except Exception as exc:
+            print(f"WARNING: {image_path.name}: {exc}", file=sys.stderr)
+            results = []
+        text, confidence = best_plate(results)
         rows.append(
             PlateRow(
                 filename=image_path.name,
