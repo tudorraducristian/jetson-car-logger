@@ -1,6 +1,7 @@
 """Folder -> plate rows -> Excel. Pure, testable helpers (no model here)."""
 
 import statistics
+from dataclasses import dataclass
 from pathlib import Path
 
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -38,3 +39,25 @@ def best_plate(results):
             best_confidence = confidence
             found = True
     return best_text, best_confidence
+
+
+@dataclass
+class PlateRow:
+    filename: str
+    plate_text: str
+    confidence: float
+
+
+def read_folder(folder, predict):
+    """Run ``predict`` on every image in ``folder`` and return one row each."""
+    rows = []
+    for image_path in list_images(folder):
+        text, confidence = best_plate(predict(str(image_path)))
+        rows.append(
+            PlateRow(
+                filename=image_path.name,
+                plate_text=text,
+                confidence=round(confidence, 4),
+            )
+        )
+    return rows
