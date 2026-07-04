@@ -1,0 +1,18 @@
+# Python 3.6 CONSTRAINT: many recent packages dropped 3.6. These versions
+# are the last known-good. DO NOT upgrade without testing on the Jetson.
+
+fastapi==0.67.0              # last 3.6-compatible release
+uvicorn==0.15.0              # compatible with fastapi 0.67
+pydantic==1.8.2              # v1 API, required by fastapi 0.67
+sqlalchemy==1.3.24           # last 1.3 release, works with 3.6
+alembic==1.7.7               # 3.6 compatible
+python-multipart==0.0.5      # for file uploads in fastapi
+jinja2==3.0.3                # last 3.0 release, 3.6 compatible
+aiofiles==0.8.0              # for StaticFiles + templates
+httpx==0.22.0                # for Plate Recognizer API calls
+pyyaml==5.4.1                # for config
+structlog==21.5.0            # structured logging
+sse-starlette==0.10.3        # SSE support for FastAPI
+pytest==7.0.1                # testing
+pytest-asyncio==0.16.0       # async test support
+requests==2.27.1             # needed by fastapi TestClient (last 3.6 release)
