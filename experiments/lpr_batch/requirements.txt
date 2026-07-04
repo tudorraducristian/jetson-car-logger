@@ -1,0 +1,2 @@
+fast-alpr[onnx]
+openpyxl
