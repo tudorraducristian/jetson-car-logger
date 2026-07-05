@@ -10,6 +10,7 @@ env/
 data/
 output/
 .env
+*.db
 
 # OS
 .DS_Store
