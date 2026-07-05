@@ -2,9 +2,13 @@
 
 from fastapi import FastAPI
 
-APP_VERSION = "0.1.0"
+from car_logger.api.routes_events import router as events_router
+
+APP_VERSION = "0.2.0"
 
 app = FastAPI(title="Car Logger", version=APP_VERSION)
+
+app.include_router(events_router)
 
 
 @app.get("/")
