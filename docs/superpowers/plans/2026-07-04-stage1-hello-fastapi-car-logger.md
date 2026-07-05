@@ -1,4 +1,4 @@
-# Hello FastAPI on Jetson (car_logger stage 1) Implementation Plan
+# Stage 1 — Hello FastAPI on Jetson (car_logger) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
