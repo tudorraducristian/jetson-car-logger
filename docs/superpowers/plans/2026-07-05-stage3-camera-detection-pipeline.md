@@ -45,7 +45,7 @@
 **Interfaces:**
 - Produces: `iou(box_a, box_b) -> float` in `[0.0, 1.0]`, where a box is `(x1, y1, x2, y2)`. Consumed by the tracker (Task 2).
 
-- [ ] **Step 1: Write the failing tests** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing tests** **[LAPTOP — Claude]**
 
 `car_logger/services/__init__.py`: empty file.
 
@@ -73,7 +73,7 @@ def test_zero_area_box_is_zero():
     assert iou((5, 5, 5, 5), (0, 0, 10, 10)) == 0.0
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
 
 ```bash
 git add car_logger/services/__init__.py tests/unit/test_geometry.py
@@ -89,7 +89,7 @@ python3 -m pytest tests/unit/test_geometry.py -v
 ```
 Expected: FAIL with `ModuleNotFoundError: No module named 'car_logger.services.geometry'`.
 
-- [ ] **Step 3: Implement `iou`** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement `iou`** **[LAPTOP — Claude]**
 
 `car_logger/services/geometry.py`:
 ```python
@@ -118,7 +118,7 @@ def iou(box_a, box_b):
     return inter_area / union
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
 
 ```bash
 git add car_logger/services/geometry.py
@@ -157,7 +157,7 @@ Expected: `4 passed`.
 > - `max_missed = 5` — frames a track survives with no match before it dies (handles brief detection dropouts).
 > - `min_hits = 5` — frames a track must be seen before we trust it enough to emit an event (kills single-frame false positives).
 
-- [ ] **Step 1: Write the failing tests (the scenarios ARE the spec)** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing tests (the scenarios ARE the spec)** **[LAPTOP — Claude]**
 
 `tests/unit/test_tracker.py`:
 ```python
@@ -207,7 +207,7 @@ def test_confirmed_only_after_min_hits_and_emitted_once():
     assert t.new_confirmed_tracks() == []
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
 
 ```bash
 git add tests/unit/test_tracker.py
@@ -223,7 +223,7 @@ python3 -m pytest tests/unit/test_tracker.py -v
 ```
 Expected: FAIL — `car_logger.services.tracker` doesn't exist.
 
-- [ ] **Step 3: Implement the tracker** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement the tracker** **[LAPTOP — Claude]**
 
 `car_logger/services/tracker.py`:
 ```python
@@ -300,7 +300,7 @@ class IoUTracker(object):
         return ready
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
 
 ```bash
 git add car_logger/services/tracker.py
@@ -328,7 +328,7 @@ Expected: `4 passed`.
 **Interfaces:**
 - Produces: `CameraWorker(device_index=0)` with `start()`, `get_latest_frame() -> Optional[ndarray]` (a BGR copy, thread-safe), `stop()`. Consumed by the pipeline (Task 5).
 
-- [ ] **Step 1: Write the camera worker** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the camera worker** **[LAPTOP — Claude]**
 
 `car_logger/services/capture.py`:
 ```python
@@ -388,7 +388,7 @@ class CameraWorker(object):
             self._cap.release()
 ```
 
-- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 2: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/services/capture.py
@@ -398,7 +398,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 3: Live-verify the camera opens and yields frames** **[JETSON — student]**
+- [x] **Step 3: Live-verify the camera opens and yields frames** **[JETSON — student]**
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -427,7 +427,7 @@ Expected: a shape like `(480, 640, 3)` then `stopped cleanly`. If `None`, the we
 - Consumes: `jetson.inference.detectNet`, a BGR frame.
 - Produces: `Detection` namedtuple `(x1, y1, x2, y2, confidence, class_id)`; `Detector(threshold=0.5).detect(frame_bgr) -> List[Detection]`, filtered to vehicle COCO classes.
 
-- [ ] **Step 1: Add the two settings** **[LAPTOP — Claude]**
+- [x] **Step 1: Add the two settings** **[LAPTOP — Claude]**
 
 In `car_logger/config.py`, add inside `Settings` (after `max_pipeline_fps`):
 ```python
@@ -442,7 +442,7 @@ CAMERA_INDEX=0
 ENABLE_PIPELINE=true
 ```
 
-- [ ] **Step 2: Write the detector** **[LAPTOP — Claude]**
+- [x] **Step 2: Write the detector** **[LAPTOP — Claude]**
 
 `car_logger/services/detector.py`:
 ```python
@@ -489,7 +489,7 @@ class Detector(object):
         return results
 ```
 
-- [ ] **Step 3: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 3: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/services/detector.py car_logger/config.py .env.example
@@ -499,7 +499,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 4: Live-verify detection on a real frame** **[JETSON — student]**
+- [x] **Step 4: Live-verify detection on a real frame** **[JETSON — student]**
 
 Point the webcam at a phone/screen showing a car photo, then:
 ```bash
@@ -530,7 +530,7 @@ Expected: first run downloads/builds the TensorRT engine (can take a few minutes
 - Consumes: `CameraWorker`, `Detector`, `IoUTracker`, an `on_event(event_dict)` callback.
 - Produces: `PipelineWorker(camera, detector, tracker, on_event, target_fps=15)` with `start()`, `stop()`, and read-only attributes `last_fps: float`, `last_event_at: Optional[float]`, `frames_processed: int`. Each confirmed track triggers `on_event({"bbox_json": ..., "track_id": ..., "anpr_status": "pending"})`. Consumed by `main.py` (Task 7) and `/api/status` (Task 6).
 
-- [ ] **Step 1: Write the pipeline worker** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the pipeline worker** **[LAPTOP — Claude]**
 
 `car_logger/services/pipeline.py`:
 ```python
@@ -597,7 +597,7 @@ class PipelineWorker(object):
             self._thread.join(timeout=2.0)
 ```
 
-- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 2: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/services/pipeline.py
@@ -607,7 +607,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 3: Live-verify the pipeline emits deduplicated events** **[JETSON — student]**
+- [x] **Step 3: Live-verify the pipeline emits deduplicated events** **[JETSON — student]**
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -641,7 +641,7 @@ Expected: a **small** number of events (single digits, not hundreds) for one car
 - Consumes: the running `PipelineWorker` and `CameraWorker`, stashed on `app.state` in Task 7.
 - Produces: `GET /api/status` → `{"pipeline_running": bool, "fps": float, "frames_processed": int, "camera_ok": bool, "last_event_at": Optional[float]}`.
 
-- [ ] **Step 1: Write the status router** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the status router** **[LAPTOP — Claude]**
 
 `car_logger/api/routes_status.py`:
 ```python
@@ -673,7 +673,7 @@ def status(request: Request):
     }
 ```
 
-- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 2: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/api/routes_status.py
@@ -696,7 +696,7 @@ git push
 - Consumes: `CameraWorker`, `Detector`, `IoUTracker`, `PipelineWorker`, `SessionLocal`, `repositories`, `schemas`, `settings`, the status router.
 - Produces: on startup, a running camera + pipeline whose `on_event` persists via a fresh session; on shutdown, both stopped. `app.state.pipeline` / `app.state.camera` exposed for `/api/status`. Gated by `settings.enable_pipeline` (off in tests).
 
-- [ ] **Step 1: Update `main.py`** **[LAPTOP — Claude]**
+- [x] **Step 1: Update `main.py`** **[LAPTOP — Claude]**
 
 `car_logger/main.py`:
 ```python
@@ -780,7 +780,7 @@ Update the version assertion in `tests/test_main.py`:
     assert body["version"] == "0.3.0"
 ```
 
-- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 2: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/main.py tests/test_main.py
@@ -790,7 +790,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 3: Confirm the whole test suite still passes** **[JETSON — student]**
+- [x] **Step 3: Confirm the whole test suite still passes** **[JETSON — student]**
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -798,7 +798,7 @@ python3 -m pytest tests/ -v
 ```
 Expected: all Stage 1+2 tests plus geometry (4) + tracker (4) still green. The pipeline does NOT start during tests (TestClient isn't used as a context manager, and `enable_pipeline` can also be set false via env).
 
-- [ ] **Step 4: Full live run + observe events accumulating** **[JETSON — student]**
+- [x] **Step 4: Full live run + observe events accumulating** **[JETSON — student]**
 
 Terminal A (leave running):
 ```bash
@@ -813,7 +813,7 @@ curl "http://192.168.0.232:8000/api/events?limit=20"
 ```
 Expected: `/api/status` shows `fps` ≥ 10 and `pipeline_running: true`; `/api/events` returns a handful of events with `bbox_json` populated and `plate_text` null.
 
-- [ ] **Step 5: Clean-shutdown check** **[JETSON — student]**
+- [x] **Step 5: Clean-shutdown check** **[JETSON — student]**
 
 Press Ctrl+C in Terminal A. Then immediately restart uvicorn. Expected: no "device busy" / "camera in use" error — the shutdown handler released the camera. Confirm with `tegrastats` (separate terminal) that RAM stayed < 2.5GB during the run.
 
