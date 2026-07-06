@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     anpr_api_url: str = "https://api.platerecognizer.com/v1/plate-reader/"
     log_level: str = "INFO"
     max_pipeline_fps: int = 15
+    detector_threshold: float = 0.5
+    camera_index: int = 0
+    enable_pipeline: bool = True
 
     class Config:
         env_file = ".env"
