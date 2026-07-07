@@ -89,3 +89,20 @@ def test_timeout_retries_then_fails(monkeypatch):
     http = httpx.Client(transport=httpx.MockTransport(handler))
     ac = AnprClient("http://anpr.test", "tok", client=http, max_retries=2)
     assert ac.read_plate(b"x").status == "failed"
+
+
+def test_network_down_returns_failed_not_raises(monkeypatch):
+    # Unplugged network raises ConnectError, NOT TimeoutException — found
+    # live in the stage 4 offline test (event stuck 'pending', dead worker).
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        raise httpx.ConnectError("no network", request=request)
+
+    http = httpx.Client(transport=httpx.MockTransport(handler))
+    ac = AnprClient("http://anpr.test", "tok", client=http, max_retries=2)
+    result = ac.read_plate(b"x")  # must not raise
+    assert result.status == "failed"
+    assert calls["n"] == 3  # initial + 2 retries, same policy as timeouts
