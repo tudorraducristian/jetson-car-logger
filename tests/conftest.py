@@ -14,18 +14,22 @@ from car_logger.main import app
 
 
 @pytest.fixture
-def db_session():
+def session_factory():
     # StaticPool + a single shared in-memory connection so every query in a
-    # test sees the same database.
+    # test sees the same database. The factory form exists because the ANPR
+    # worker opens its own sessions (one per outcome), like in production.
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False,
-                                   autocommit=False)
-    session = testing_session()
+    return sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+@pytest.fixture
+def db_session(session_factory):
+    session = session_factory()
     try:
         yield session
     finally:

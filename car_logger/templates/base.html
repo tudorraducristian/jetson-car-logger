@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Car Logger{% endblock %}</title>
+  <link rel="icon" href="data:,">
+
+  {# Tailwind Play CDN — no build step, per CLAUDE.md. #}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            mono: ['"DM Mono"', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            /* OLED-dark editorial palette: near-black inks, warm paper
+               text, a single gold accent. */
+            ink:   { 950: '#0a0a0c', 900: '#111114', 850: '#16161a',
+                     800: '#1d1d23', 700: '#2a2a32' },
+            paper: { DEFAULT: '#e9e6df', dim: '#a8a49b', faint: '#6b6862' },
+            gold:  { DEFAULT: '#d4a843', dim: '#8a6d2b' },
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  {# htmx — the whole "framework". Pinned version, single script tag. #}
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #2a2a32; border-radius: 4px; }
+    ::selection { background: #d4a843; color: #0a0a0c; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-ink-950 text-paper antialiased min-h-screen">
+  {% block content %}{% endblock %}
+</body>
+</html>

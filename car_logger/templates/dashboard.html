@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+
+  {# ── Masthead ─────────────────────────────────────────────────────── #}
+  <header class="mb-8 border-b border-ink-700 pb-6">
+    <p class="font-mono text-[11px] uppercase tracking-[0.25em] text-gold">
+      Jetson Nano &middot; appliance de monitorizare
+    </p>
+    <div class="mt-2 flex flex-wrap items-end justify-between gap-4">
+      <h1 class="font-display text-4xl font-bold italic sm:text-5xl">
+        Car Logger
+      </h1>
+      <p class="font-mono text-xs text-paper-faint">
+        jurnalul ma&#537;inilor din fa&#539;a casei
+      </p>
+    </div>
+  </header>
+
+  {# ── Stats: 4 tiles + pipeline health, refreshed every 5s ─────────── #}
+  <section aria-label="Statistici"
+           hx-get="/partials/stats"
+           hx-trigger="load, every 5s"
+           hx-swap="innerHTML"
+           class="mb-8 min-h-[7rem]">
+  </section>
+
+  <div class="grid gap-8 lg:grid-cols-12">
+
+    {# ── Live events feed, refreshed every 2s ───────────────────────── #}
+    <section aria-label="Evenimente recente" class="lg:col-span-7">
+      <h2 class="mb-4 font-display text-2xl font-medium">Evenimente</h2>
+      <div hx-get="/partials/events-feed"
+           hx-trigger="load, every 2s"
+           hx-swap="innerHTML"
+           class="min-h-[16rem]">
+      </div>
+    </section>
+
+    <div class="space-y-8 lg:col-span-5">
+
+      {# ── Event detail drawer: filled when a row is clicked ────────── #}
+      <section aria-label="Detaliu eveniment">
+        <h2 class="mb-4 font-display text-2xl font-medium">Detaliu</h2>
+        <div id="event-detail"
+             hx-get="/partials/event-detail"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+        </div>
+      </section>
+
+      {# ── Recent vehicles, refreshed every 5s ──────────────────────── #}
+      <section aria-label="Vehicule recente">
+        <h2 class="mb-4 font-display text-2xl font-medium">Vehicule</h2>
+        <div hx-get="/partials/vehicles-list"
+             hx-trigger="load, every 5s"
+             hx-swap="innerHTML"
+             class="min-h-[8rem]">
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
