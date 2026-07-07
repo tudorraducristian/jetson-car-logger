@@ -780,7 +780,7 @@ def health():
 
 > `GET /` is now served by the dashboard router (Task 6), so the old `root()` handler is removed. `tests/test_main.py`'s root test must move to assert HTML instead — updated in Task 6 Step 4.
 
-- [ ] **Step 3: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 3: Commit and push** **[LAPTOP — Claude]** *(pushed `a720b0c`; follow-up `b0e85e3` un-hardcoded the version in the root test)*
 
 ```bash
 git add car_logger/services/pipeline.py car_logger/main.py
@@ -790,7 +790,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 4: Verify non-blocking claim** **[JETSON — student]**
+- [x] **Step 4: Verify non-blocking claim** **[JETSON — student]** *(2026-07-07, run with a FakeAnpr client sleeping 1s — quota-free equivalent of the sleep-in-AnprClient edit: `fps: 21.6 | frames: 89 | anpr done: 1` → pipeline FPS unaffected by ANPR latency)*
 
 Temporarily add `time.sleep(1)` at the top of `AnprClient.read_plate` on the Jetson (edit locally, do not commit), run the Stage 3 Task 5 live snippet adapted to the new `on_confirmed` signature, and confirm `last_fps` stays ≥ 10 despite the 1s fake latency. Then remove the sleep. This proves the pipeline isn't waiting on ANPR. *(Per CLAUDE.md, this experiment is the student's to run and reason about.)*
 
@@ -812,7 +812,17 @@ Temporarily add `time.sleep(1)` at the top of `AnprClient.read_plate` on the Jet
 
 > **Design note:** for a polished dark editorial look, invoke the `ui-ux-pro-max` (or `frontend-design`) skill at execution time and let it own the CSS/markup. The templates below are a complete, working baseline so the task has no placeholder — treat them as the floor, not the ceiling.
 
-- [ ] **Step 1: Write the base template** **[LAPTOP — Claude]**
+> **Execution note (2026-07-07):** per the student amendments, Steps 1–4 reuse
+> the richer ui-ux-pro-max template set + router + tests recovered from the
+> reverted first pass (`32c7c4d`), instead of the baseline below. Adaptations:
+> `partials/stats.html` now uses the `event_stats` keys (dropped the
+> `events_last_24h` tile, `total_vehicles` → `unique_vehicles`);
+> `AnprWorker.pending()` added for the queue-depth status line; `main.py`
+> mounts `/data/plates` via StaticFiles so the feed can show crops; the
+> dashboard tests are the first pass's 7 (Romanian markers), saved as
+> `tests/integration/test_dashboard.py`.
+
+- [x] **Step 1: Write the base template** **[LAPTOP — Claude]**
 
 `car_logger/templates/base.html`:
 ```html
@@ -835,7 +845,7 @@ Temporarily add `time.sleep(1)` at the top of `AnprClient.read_plate` on the Jet
 </html>
 ```
 
-- [ ] **Step 2: Write the dashboard + partial templates** **[LAPTOP — Claude]**
+- [x] **Step 2: Write the dashboard + partial templates** **[LAPTOP — Claude]**
 
 `car_logger/templates/dashboard.html`:
 ```html
@@ -910,7 +920,7 @@ Temporarily add `time.sleep(1)` at the top of `AnprClient.read_plate` on the Jet
 </dl>
 ```
 
-- [ ] **Step 3: Write the dashboard router** **[LAPTOP — Claude]**
+- [x] **Step 3: Write the dashboard router** **[LAPTOP — Claude]**
 
 `car_logger/api/routes_dashboard.py`:
 ```python
@@ -963,7 +973,7 @@ def stats(request: Request, db: Session = Depends(get_db)):
     )
 ```
 
-- [ ] **Step 4: Write dashboard tests + fix the root test** **[LAPTOP — Claude]**
+- [x] **Step 4: Write dashboard tests + fix the root test** **[LAPTOP — Claude]**
 
 Replace the root test in `tests/test_main.py`:
 ```python

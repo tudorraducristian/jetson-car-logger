@@ -1,0 +1,51 @@
+{% import "partials/macros.html" as m %}
+
+<article class="overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+  <div class="flex items-center justify-between border-b border-ink-700 px-4 py-2">
+    <span class="font-mono text-xs text-paper-faint">eveniment #{{ event.id }}</span>
+    <button type="button" aria-label="Închide detaliul"
+            hx-get="/partials/event-detail"
+            hx-target="#event-detail"
+            hx-swap="innerHTML"
+            class="flex h-11 w-11 cursor-pointer items-center justify-center rounded text-paper-dim transition-colors duration-150 hover:bg-ink-850 hover:text-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+
+  {% if event.image_path %}
+  <img src="/data/plates/{{ event.id }}.jpg" alt="Crop-ul evenimentului {{ event.id }}"
+       class="max-h-64 w-full bg-ink-800 object-contain">
+  {% endif %}
+
+  <dl class="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-4 text-sm">
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Plăcuță</dt>
+      <dd class="mt-1">{{ m.plate_chip(event.plate_text) }}</dd>
+    </div>
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Stare ANPR</dt>
+      <dd class="mt-1">{{ m.status_badge(event.anpr_status) }}</dd>
+    </div>
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Încredere</dt>
+      <dd class="mt-1 font-mono text-paper">
+        {{ '%d%%' % (event.plate_confidence * 100) if event.plate_confidence is not none else '—' }}
+      </dd>
+    </div>
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Moment (UTC)</dt>
+      <dd class="mt-1 font-mono text-paper">{{ event.timestamp.strftime('%d %b %Y %H:%M:%S') }}</dd>
+    </div>
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Track</dt>
+      <dd class="mt-1 font-mono text-paper">{{ event.track_id if event.track_id is not none else '—' }}</dd>
+    </div>
+    <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Bbox</dt>
+      <dd class="mt-1 break-all font-mono text-xs text-paper-dim">{{ event.bbox_json or '—' }}</dd>
+    </div>
+  </dl>
+</article>

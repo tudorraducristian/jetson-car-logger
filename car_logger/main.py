@@ -5,7 +5,9 @@ import os
 import time
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
+from car_logger.api.routes_dashboard import router as dashboard_router
 from car_logger.api.routes_events import router as events_router
 from car_logger.api.routes_status import router as status_router
 from car_logger.config import settings
@@ -21,6 +23,11 @@ app = FastAPI(title="Car Logger", version=APP_VERSION)
 
 app.include_router(events_router)
 app.include_router(status_router)
+app.include_router(dashboard_router)
+
+# The dashboard loads crops straight from disk: /data/plates/<event_id>.jpg
+os.makedirs(PLATES_DIR, exist_ok=True)
+app.mount("/data/plates", StaticFiles(directory=PLATES_DIR), name="plates")
 
 
 def _cleanup_old_crops(plates_dir=PLATES_DIR, max_age_days=CROP_RETENTION_DAYS):
@@ -141,12 +148,6 @@ def _shutdown():
         worker = getattr(app.state, name, None)
         if worker is not None:
             worker.stop()
-
-
-@app.get("/")
-def root():
-    """Greeting endpoint - replaced by the dashboard router in Task 6."""
-    return {"message": "Car Logger is running", "version": APP_VERSION}
 
 
 @app.get("/health")

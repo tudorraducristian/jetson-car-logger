@@ -1,0 +1,22 @@
+{% import "partials/macros.html" as m %}
+
+{% if vehicles %}
+<ul class="divide-y divide-ink-700 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+  {% for vehicle in vehicles %}
+  <li class="flex items-center gap-4 px-4 py-3">
+    <span class="min-w-0 flex-1">{{ m.plate_chip(vehicle.plate_text) }}</span>
+    <span class="font-mono text-xs text-paper-dim">
+      {{ vehicle.total_sightings }}
+      {{ 'trecere' if vehicle.total_sightings == 1 else 'treceri' }}
+    </span>
+    <time class="w-24 flex-none text-right font-mono text-xs text-paper-faint">
+      {{ vehicle.last_seen_at.strftime('%d %b %H:%M') }}
+    </time>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="flex min-h-[8rem] items-center justify-center rounded-lg border border-dashed border-ink-700 text-paper-faint">
+  <p class="text-sm">Nicio plăcuță citită încă.</p>
+</div>
+{% endif %}

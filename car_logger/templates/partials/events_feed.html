@@ -1,0 +1,46 @@
+{% import "partials/macros.html" as m %}
+
+{% if events %}
+<ul class="divide-y divide-ink-700 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+  {% for event in events %}
+  <li>
+    <button type="button"
+            hx-get="/partials/event/{{ event.id }}"
+            hx-target="#event-detail"
+            hx-swap="innerHTML"
+            class="flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-left transition-colors duration-150 hover:bg-ink-850 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
+      {% if event.image_path %}
+      <img src="/data/plates/{{ event.id }}.jpg" alt="Crop eveniment {{ event.id }}"
+           width="56" height="42" loading="lazy"
+           class="h-[42px] w-14 flex-none rounded object-cover bg-ink-800">
+      {% else %}
+      <span class="flex h-[42px] w-14 flex-none items-center justify-center rounded bg-ink-800 text-paper-faint">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M5 13h14M5 13v4a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-4"/>
+        </svg>
+      </span>
+      {% endif %}
+      <span class="min-w-0 flex-1">
+        {{ m.plate_chip(event.plate_text) }}
+        <span class="mt-1 block font-mono text-[11px] text-paper-faint">
+          #{{ event.id }} &middot; track {{ event.track_id if event.track_id is not none else '–' }}
+        </span>
+      </span>
+      {{ m.status_badge(event.anpr_status) }}
+      <time class="w-16 flex-none text-right font-mono text-xs text-paper-dim">
+        {{ event.timestamp.strftime('%H:%M:%S') }}
+      </time>
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="flex min-h-[16rem] flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-ink-700 text-paper-faint">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13M5 13h14M5 13v4a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-4"/>
+  </svg>
+  <p class="text-sm">Niciun eveniment încă &mdash; pipeline-ul așteaptă mașini.</p>
+</div>
+{% endif %}

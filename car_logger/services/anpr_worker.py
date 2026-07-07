@@ -31,6 +31,10 @@ class AnprWorker(object):
         except queue.Full:
             return False
 
+    def pending(self):
+        """How many jobs wait in the queue (shown on the dashboard)."""
+        return self._queue.qsize()
+
     def _loop(self):
         while self._running:
             try:
