@@ -12,7 +12,11 @@ from car_logger.api.routes_events import router as events_router
 from car_logger.api.routes_status import router as status_router
 from car_logger.config import settings
 from car_logger.database import SessionLocal
+from car_logger.logging_config import configure_logging, get_logger
 from car_logger import repositories, schemas
+
+configure_logging(settings.log_level)
+log = get_logger("car_logger")
 
 APP_VERSION = "0.4.0"
 
@@ -138,6 +142,7 @@ def _startup():
     app.state.camera = camera
     app.state.pipeline = pipeline
     app.state.anpr_worker = anpr_worker
+    log.info("pipeline_started", target_fps=settings.max_pipeline_fps)
 
 
 @app.on_event("shutdown")
@@ -148,6 +153,7 @@ def _shutdown():
         worker = getattr(app.state, name, None)
         if worker is not None:
             worker.stop()
+    log.info("app_shutdown")
 
 
 @app.get("/health")
