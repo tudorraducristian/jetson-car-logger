@@ -33,6 +33,19 @@ def test_200_returns_plate(monkeypatch):
     assert calls["n"] == 1
 
 
+def test_201_created_returns_plate(monkeypatch):
+    # The real Plate Recognizer answers 201 Created, not 200 — discovered
+    # live in stage 4 task 7, after six green tests that all mocked 200.
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    ac, calls = _client_returning([
+        (201, {"results": [{"plate": "mmm8748", "score": 1.0}]}),
+    ])
+    result = ac.read_plate(b"jpegbytes")
+    assert result.status == "success"
+    assert result.plate_text == "mmm8748"
+    assert calls["n"] == 1
+
+
 def test_200_no_results_is_failed(monkeypatch):
     monkeypatch.setattr("time.sleep", lambda *_: None)
     ac, _ = _client_returning([(200, {"results": []})])
