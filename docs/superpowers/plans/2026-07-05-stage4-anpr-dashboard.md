@@ -74,7 +74,7 @@ conflict with a task below, the amendment wins:
 > - `429` (rate-limited) → **no retry**, `status="throttled"` (respect the limit).
 > - `4xx` (bad request) → **no retry**, `status="failed"`.
 
-- [ ] **Step 1: Write the failing tests** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing tests** **[LAPTOP — Claude]** *(pushed `0682802`)*
 
 `tests/unit/test_anpr_client.py`:
 ```python
@@ -158,7 +158,7 @@ def test_timeout_retries_then_fails(monkeypatch):
     assert ac.read_plate(b"x").status == "failed"
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]** *(RED confirmed on the Jetson 2026-07-07: `ModuleNotFoundError`)*
 
 ```bash
 git add tests/unit/test_anpr_client.py
@@ -174,7 +174,7 @@ python3 -m pytest tests/unit/test_anpr_client.py -v
 ```
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement the ANPR client** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement the ANPR client** **[LAPTOP — Claude]** *(pushed `31ef73e`)*
 
 `car_logger/services/anpr_client.py`:
 ```python
@@ -248,7 +248,7 @@ class AnprClient(object):
         return PlateResult(best.get("plate"), best.get("score"), "success")
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** *(student confirmed 2026-07-07: `6 passed`)*
 
 ```bash
 git add car_logger/services/anpr_client.py
