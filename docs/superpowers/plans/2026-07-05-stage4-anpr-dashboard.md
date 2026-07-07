@@ -497,7 +497,7 @@ Then **[JETSON — student]**: `git pull && python3 -m pytest tests/unit/test_re
 - Consumes: an `AnprClient`, an `on_result(event_id, plate_result, crop_bytes)` callback.
 - Produces: `AnprWorker(anpr_client, on_result, queue_maxsize=32)` with `start()`, `submit(event_id, crop_bytes) -> bool` (False if dropped because full), `stop()`. The worker never blocks the caller: `submit` uses `put_nowait` and drops under load.
 
-- [ ] **Step 1: Write the ANPR worker** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the ANPR worker** **[LAPTOP — Claude]** *(pushed `eb40f93`)*
 
 `car_logger/services/anpr_worker.py`:
 ```python
@@ -552,7 +552,7 @@ class AnprWorker(object):
             self._thread.join(timeout=2.0)
 ```
 
-- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 2: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add car_logger/services/anpr_worker.py
@@ -562,7 +562,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 3: Smoke-test the worker in isolation** **[JETSON — student]**
+- [x] **Step 3: Smoke-test the worker in isolation** **[JETSON — student]** *(student confirmed 2026-07-07: `result: [(1, ('FAKE', 0.5, 'success'))]`)*
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -592,7 +592,7 @@ Expected: `result: [(1, ('FAKE', 0.5, 'success'))]`.
 **Interfaces:**
 - Pipeline's `on_event` now receives the crop and event id path: pipeline persists a `pending` event, crops the frame, and submits to the ANPR worker. `main.py` builds `AnprClient` + `AnprWorker`, whose `on_result` saves the crop and updates the event + vehicle.
 
-- [ ] **Step 1: Extend the pipeline to crop + submit** **[LAPTOP — Claude]**
+- [x] **Step 1: Extend the pipeline to crop + submit** **[LAPTOP — Claude]**
 
 Modify `car_logger/services/pipeline.py`. Change the constructor to accept an optional `on_confirmed(track, frame)` callback that fully owns persistence+ANPR (keeps the pipeline itself dependency-light):
 ```python
@@ -652,7 +652,7 @@ class PipelineWorker(object):
 
 > This replaces the Stage 3 `on_event(event_dict)` shape. The Stage 3 live-run snippets that called `PipelineWorker(..., emitted.append, ...)` were verification scaffolding, not shipped code — nothing else imports the old signature.
 
-- [ ] **Step 2: Update `main.py` to build the full ANPR path** **[LAPTOP — Claude]**
+- [x] **Step 2: Update `main.py` to build the full ANPR path** **[LAPTOP — Claude]** *(executed with the student amendments: crop saved for every outcome, `_cleanup_old_crops` 30-day retention at startup. Deviation: the `routes_dashboard` import + root() removal moved to Task 6, when that router exists — keeps every pushed commit green.)*
 
 `car_logger/main.py` — replace the `_persist_event`/`_startup` section from Stage 3 with:
 ```python
