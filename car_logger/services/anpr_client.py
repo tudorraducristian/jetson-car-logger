@@ -3,6 +3,8 @@
 STUDENT DECISIONS (confirmed 2026-07-07):
 - timeout      = 5.0 : per-request timeout in seconds.
 - max_retries  = 2   : retry count for 5xx / timeouts, exponential backoff.
+- success = exactly 200 or 201 (the real API answers 201 Created; we list
+  the documented codes explicitly instead of accepting any 2xx).
 - 429 -> no retry, status='throttled' (respect the published rate limit).
 - 4xx -> no retry, status='failed' (our request is wrong; retrying repeats it).
 """
@@ -50,7 +52,7 @@ class AnprClient(object):
                     continue
                 return PlateResult(None, None, "failed")
 
-            if resp.status_code == 200:
+            if resp.status_code in (200, 201):
                 return self._parse(resp.json())
             if resp.status_code == 429:
                 return PlateResult(None, None, "throttled")
