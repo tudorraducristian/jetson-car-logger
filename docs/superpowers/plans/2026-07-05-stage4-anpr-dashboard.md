@@ -1041,7 +1041,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 2: Run the full appliance** **[JETSON — student]**
+- [x] **Step 2: Run the full appliance** **[JETSON — student]** *(2026-07-07: no printable plate photo + screen moiré ⇒ ran the real app with only the webcam swapped for `car_test.jpg` via `~/e2e_fake_cam.py` (uncommitted scaffold). Plate `mmm8748` read at 100% confidence, crop thumbnail in the feed, vehicle upserted to 3 sightings across runs. Exposed live bug #1: the real API answers **201 Created**, the client only accepted 200 → fixed test-first, `cd33695`+`a976e4b`.)*
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -1052,15 +1052,25 @@ Open `http://192.168.0.232:8000/` on the laptop/phone. Hold a printed plate or a
 
 Expected: within a few seconds an event appears in the feed; shortly after, its `plate_text` fills in and a vehicle appears in the sidebar. DevTools → Network shows htmx GETs to `/partials/*` every 2s.
 
-- [ ] **Step 3: Internet-down test** **[JETSON — student]**
+- [x] **Step 3: Internet-down test** **[JETSON — student]** *(2026-07-07: done via `sudo ip route del default` so the LAN stayed up. Exposed live bug #2: a dead network raises `ConnectError`, not `TimeoutException` — it escaped read_plate, killed the worker thread and stranded event #6 in 'pending' forever. Fixed test-first (`b953b3c`+`2e25753`): client catches all `httpx.RequestError`, worker loop is a defense-in-depth boundary. Retest: events #8–#10 failed cleanly WITH crops, no crash; reconnect → #11 read again.)*
 
 Disconnect the Jetson from the internet (unplug Ethernet / disable Wi-Fi). Show a car to the camera. Expected: events still created, `anpr_status="failed"` (visible in the feed), no crash. Reconnect → new events get plates again.
 
-- [ ] **Step 4: Resource check** **[JETSON — student]**
+- [x] **Step 4: Resource check** **[JETSON — student]** *(2026-07-07: app process RSS 1.47GB (bar: 1.5–2.2GB ✓); system total 2952/3956MB incl. desktop GUI; dashboard fps 20–21 (bar: ≥8 ✓); ~54°C, GR3D 99% by design with the static test frame.)*
 
 In another terminal: `tegrastats`. Expected: full-stack RAM < 2.5GB; pipeline FPS (via `/api/status`) ≥ 8 with ANPR integrated.
 
 **CHECKPOINT:** report: plate read live? internet-down behaviour? FPS + RAM? Stage 4 is done when a plate is read end-to-end and the offline test passes.
+
+> **STAGE 4 DONE (2026-07-07).** Plate read end-to-end (`mmm8748`, 100%),
+> offline test passes cleanly, suite at **46 passed** on the Jetson. The live
+> verification earned its keep: it caught two real bugs the mocks couldn't
+> (201-as-success, dead-network exception killing the worker), both fixed
+> RED→GREEN. Known artifacts: event #6 stays 'pending' forever (scar of bug
+> #2, delete in stage 5 cleanup if desired); `~/e2e_fake_cam.py` scaffold
+> lives on the Jetson, handy for stage 5 demos. Noted for stage 5 docs: the
+> UI pulls Tailwind/htmx/fonts from CDNs — a browser with no internet and a
+> cold cache gets a bare page (accepted CLAUDE.md trade-off).
 
 ---
 
