@@ -59,7 +59,7 @@ def _cleanup_old_crops(plates_dir=PLATES_DIR, max_age_days=CROP_RETENTION_DAYS):
     return removed
 
 
-def _make_on_result():
+def _make_on_result(broker):
     """Build the ANPR result callback: save crop, update event, upsert vehicle.
 
     Student amendment (2026-07-07): the crop is saved for EVERY outcome, not
@@ -85,6 +85,7 @@ def _make_on_result():
                 repositories.update_event_anpr(
                     db, event_id, None, None, plate_result.status, image_path,
                 )
+            broker.publish("updated")
         finally:
             db.close()
     return on_result
@@ -112,7 +113,7 @@ def _startup():
     camera.start()
 
     anpr_client = AnprClient(settings.anpr_api_url, settings.anpr_api_key)
-    anpr_worker = AnprWorker(anpr_client, _make_on_result())
+    anpr_worker = AnprWorker(anpr_client, _make_on_result(app.state.broker))
     anpr_worker.start()
 
     def on_confirmed(track, frame):
@@ -127,6 +128,7 @@ def _startup():
             event_id = event.id
         finally:
             db.close()
+        app.state.broker.publish("created")
         # 2) crop and hand off to ANPR — pipeline does NOT wait for the network
         crop_bytes = crop_to_jpeg(frame, track.box)
         submitted = anpr_worker.submit(event_id, crop_bytes)

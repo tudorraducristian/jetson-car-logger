@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+{# hx-ext="sse" on the root: one EventSource for the whole page; children
+   listen with hx-trigger="sse:new_event" instead of polling timers. #}
+<div hx-ext="sse" sse-connect="/stream/events"
+     class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
 
   {# ── Masthead ─────────────────────────────────────────────────────── #}
   <header class="mb-8 border-b border-ink-700 pb-6">
@@ -18,21 +21,30 @@
     </div>
   </header>
 
-  {# ── Stats: 3 tiles + pipeline health, refreshed every 5s ─────────── #}
+  {# ── Stats: 3 tiles + pipeline health, refreshed on SSE signal ────── #}
   <section aria-label="Statistici"
            hx-get="/partials/stats"
-           hx-trigger="load, every 5s"
+           hx-trigger="load, sse:new_event"
            hx-swap="innerHTML"
            class="mb-8 min-h-[7rem]">
   </section>
 
   <div class="grid gap-8 lg:grid-cols-12">
 
-    {# ── Live events feed, refreshed every 2s ───────────────────────── #}
+    {# ── Live events feed: SSE-driven refresh + plate search ────────── #}
     <section aria-label="Evenimente recente" class="lg:col-span-7">
-      <h2 class="mb-4 font-display text-2xl font-medium">Evenimente</h2>
-      <div hx-get="/partials/events-feed"
-           hx-trigger="load, every 2s"
+      <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <h2 class="font-display text-2xl font-medium">Evenimente</h2>
+        <input type="search" name="q" placeholder="caut&#259; dup&#259; plac&#259;&#8230;"
+               class="w-48 rounded border border-ink-700 bg-ink-900 px-3 py-1.5
+                      font-mono text-xs text-paper placeholder-paper-faint
+                      focus:border-gold focus:outline-none"
+               hx-get="/partials/events-feed" hx-target="#events-feed"
+               hx-trigger="input changed delay:300ms" hx-include="this">
+      </div>
+      <div id="events-feed"
+           hx-get="/partials/events-feed"
+           hx-trigger="load, sse:new_event"
            hx-swap="innerHTML"
            class="min-h-[16rem]">
       </div>
@@ -50,11 +62,11 @@
         </div>
       </section>
 
-      {# ── Recent vehicles, refreshed every 5s ──────────────────────── #}
+      {# ── Recent vehicles, refreshed on SSE signal ─────────────────── #}
       <section aria-label="Vehicule recente">
         <h2 class="mb-4 font-display text-2xl font-medium">Vehicule</h2>
         <div hx-get="/partials/vehicles-list"
-             hx-trigger="load, every 5s"
+             hx-trigger="load, sse:new_event"
              hx-swap="innerHTML"
              class="min-h-[8rem]">
         </div>

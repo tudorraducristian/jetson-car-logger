@@ -28,8 +28,8 @@ def dashboard(request: Request):
 
 
 @router.get("/partials/events-feed")
-def events_feed(request: Request, db: Session = Depends(get_db)):
-    events = repositories.list_events(db, limit=15)
+def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
+    events = repositories.list_events(db, limit=15, plate_text=(q or None))
     return templates.TemplateResponse(
         "partials/events_feed.html",
         {"request": request, "events": events})
