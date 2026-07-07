@@ -10,24 +10,29 @@ from fastapi.staticfiles import StaticFiles
 from car_logger.api.routes_dashboard import router as dashboard_router
 from car_logger.api.routes_events import router as events_router
 from car_logger.api.routes_status import router as status_router
+from car_logger.api.routes_stream import router as stream_router
 from car_logger.config import settings
 from car_logger.database import SessionLocal
 from car_logger.logging_config import configure_logging, get_logger
+from car_logger.services.broker import EventBroker
 from car_logger import repositories, schemas
 
 configure_logging(settings.log_level)
 log = get_logger("car_logger")
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.5.0"
 
 PLATES_DIR = "data/plates"
 CROP_RETENTION_DAYS = 30  # student decision: old crops are disk noise after a month
 
 app = FastAPI(title="Car Logger", version=APP_VERSION)
 
+broker = EventBroker()
+
 app.include_router(events_router)
 app.include_router(status_router)
 app.include_router(dashboard_router)
+app.include_router(stream_router)
 
 # The dashboard loads crops straight from disk: /data/plates/<event_id>.jpg
 os.makedirs(PLATES_DIR, exist_ok=True)
@@ -88,6 +93,9 @@ def _make_on_result():
 @app.on_event("startup")
 def _startup():
     _cleanup_old_crops()
+    # Before the early return: /stream/events needs the broker even when the
+    # pipeline is disabled (tests, laptop dev-runs without camera).
+    app.state.broker = broker
     if not settings.enable_pipeline:
         return
     # Imported here (not at module top) so importing main.py without a camera
