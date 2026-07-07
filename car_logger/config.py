@@ -10,16 +10,6 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./car_logger.db"
     anpr_api_key: str = ""
     anpr_api_url: str = "https://api.platerecognizer.com/v1/plate-reader/"
-    # Student's decisions (Stage 4): 5s tolerates home Wi-Fi jitter; 2 retries
-    # with exponential backoff bounds the worst case at ~12s per event.
-    anpr_timeout_seconds: float = 5.0
-    anpr_max_retries: int = 2
-    # Bounded queue: if ANPR falls behind, we skip events instead of growing
-    # memory without limit (4GB RAM budget).
-    anpr_queue_maxsize: int = 32
-    plates_dir: str = "data/plates"
-    # Student's decision: 30 days of crops is plenty for a personal project.
-    crop_retention_days: int = 30
     log_level: str = "INFO"
     max_pipeline_fps: int = 15
     detector_threshold: float = 0.5
