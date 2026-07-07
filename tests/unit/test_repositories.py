@@ -1,4 +1,5 @@
 from car_logger import repositories, schemas
+from car_logger.models import Vehicle
 
 
 def _make(plate=None, status="pending"):
@@ -41,3 +42,35 @@ def test_list_events_caps_limit(db_session):
     rows = repositories.list_events(db_session, limit=1000)
     assert len(rows) == 5  # all 5 returned, but limit was capped, not errored
     assert repositories.MAX_LIST_LIMIT == 100
+
+
+def test_upsert_vehicle_creates_then_bumps(db_session):
+    v1 = repositories.upsert_vehicle_for_plate(db_session, "B123XYZ")
+    assert v1.total_sightings == 1
+    v2 = repositories.upsert_vehicle_for_plate(db_session, "B123XYZ")
+    assert v2.id == v1.id
+    assert v2.total_sightings == 2
+    assert db_session.query(Vehicle).count() == 1
+
+
+def test_update_event_anpr_sets_plate_and_status(db_session):
+    ev = repositories.create_event(db_session, _make())
+    updated = repositories.update_event_anpr(
+        db_session, ev.id, plate_text="B123XYZ", confidence=0.9,
+        status="success", image_path="data/plates/1.jpg",
+    )
+    assert updated.plate_text == "B123XYZ"
+    assert updated.anpr_status == "success"
+    assert updated.image_path == "data/plates/1.jpg"
+
+
+def test_event_stats_counts(db_session):
+    repositories.create_event(db_session, _make(plate=None))
+    ev = repositories.create_event(db_session, _make(plate=None))
+    repositories.update_event_anpr(db_session, ev.id, "B1", 0.9, "success",
+                                   "p.jpg")
+    repositories.upsert_vehicle_for_plate(db_session, "B1")
+    stats = repositories.event_stats(db_session)
+    assert stats["total_events"] == 2
+    assert stats["plates_read"] == 1
+    assert stats["unique_vehicles"] == 1
