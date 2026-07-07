@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from car_logger.main import app
+from car_logger.main import APP_VERSION, app
 
 client = TestClient(app)
 
@@ -10,7 +10,7 @@ def test_root_returns_greeting_and_version():
     assert response.status_code == 200
     body = response.json()
     assert body["message"] == "Car Logger is running"
-    assert body["version"] == "0.3.0"
+    assert body["version"] == APP_VERSION
 
 
 def test_health_returns_ok():
