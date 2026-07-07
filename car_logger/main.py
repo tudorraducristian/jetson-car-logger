@@ -1,5 +1,9 @@
 """Car Logger API entrypoint - the app object everything else attaches to."""
 
+import json
+import os
+import time
+
 from fastapi import FastAPI
 
 from car_logger.api.routes_events import router as events_router
@@ -8,7 +12,10 @@ from car_logger.config import settings
 from car_logger.database import SessionLocal
 from car_logger import repositories, schemas
 
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.4.0"
+
+PLATES_DIR = "data/plates"
+CROP_RETENTION_DAYS = 30  # student decision: old crops are disk noise after a month
 
 app = FastAPI(title="Car Logger", version=APP_VERSION)
 
@@ -16,18 +23,60 @@ app.include_router(events_router)
 app.include_router(status_router)
 
 
-def _persist_event(event_dict):
-    """on_event callback: open a short-lived session in the pipeline thread and
-    write the event. A new session per event keeps thread ownership simple."""
-    db = SessionLocal()
-    try:
-        repositories.create_event(db, schemas.EventCreate(**event_dict))
-    finally:
-        db.close()
+def _cleanup_old_crops(plates_dir=PLATES_DIR, max_age_days=CROP_RETENTION_DAYS):
+    """Delete stored plate crops older than the retention window.
+
+    Runs once at startup: the SD card, not the DB, is the scarce resource. A
+    failed delete must never stop the app from starting."""
+    if not os.path.isdir(plates_dir):
+        return 0
+    cutoff = time.time() - max_age_days * 86400
+    removed = 0
+    for name in os.listdir(plates_dir):
+        path = os.path.join(plates_dir, name)
+        try:
+            if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                os.remove(path)
+                removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+def _make_on_result():
+    """Build the ANPR result callback: save crop, update event, upsert vehicle.
+
+    Student amendment (2026-07-07): the crop is saved for EVERY outcome, not
+    only success — a failed read's image is the debugging evidence."""
+    def on_result(event_id, plate_result, crop_bytes):
+        db = SessionLocal()
+        try:
+            image_path = None
+            if crop_bytes:
+                os.makedirs(PLATES_DIR, exist_ok=True)
+                image_path = os.path.join(PLATES_DIR, str(event_id) + ".jpg")
+                with open(image_path, "wb") as fh:
+                    fh.write(crop_bytes)
+            if plate_result.status == "success" and plate_result.plate_text:
+                vehicle = repositories.upsert_vehicle_for_plate(
+                    db, plate_result.plate_text
+                )
+                repositories.update_event_anpr(
+                    db, event_id, plate_result.plate_text,
+                    plate_result.confidence, "success", image_path, vehicle.id,
+                )
+            else:
+                repositories.update_event_anpr(
+                    db, event_id, None, None, plate_result.status, image_path,
+                )
+        finally:
+            db.close()
+    return on_result
 
 
 @app.on_event("startup")
 def _startup():
+    _cleanup_old_crops()
     if not settings.enable_pipeline:
         return
     # Imported here (not at module top) so importing main.py without a camera
@@ -36,34 +85,67 @@ def _startup():
     from car_logger.services.detector import Detector
     from car_logger.services.tracker import IoUTracker
     from car_logger.services.pipeline import PipelineWorker
+    from car_logger.services.anpr_client import AnprClient
+    from car_logger.services.anpr_worker import AnprWorker
+    from car_logger.services.cropping import crop_to_jpeg
 
     camera = CameraWorker(device_index=settings.camera_index)
     camera.start()
+
+    anpr_client = AnprClient(settings.anpr_api_url, settings.anpr_api_key)
+    anpr_worker = AnprWorker(anpr_client, _make_on_result())
+    anpr_worker.start()
+
+    def on_confirmed(track, frame):
+        # 1) persist a pending event to get its id
+        db = SessionLocal()
+        try:
+            event = repositories.create_event(db, schemas.EventCreate(
+                bbox_json=json.dumps(list(track.box)),
+                track_id=track.track_id,
+                anpr_status="pending",
+            ))
+            event_id = event.id
+        finally:
+            db.close()
+        # 2) crop and hand off to ANPR — pipeline does NOT wait for the network
+        crop_bytes = crop_to_jpeg(frame, track.box)
+        submitted = anpr_worker.submit(event_id, crop_bytes)
+        if not submitted:
+            db2 = SessionLocal()
+            try:
+                repositories.update_event_anpr(
+                    db2, event_id, None, None, "skipped", None,
+                )
+            finally:
+                db2.close()
+
     pipeline = PipelineWorker(
         camera=camera,
         detector=Detector(threshold=settings.detector_threshold),
         tracker=IoUTracker(),
-        on_event=_persist_event,
+        on_confirmed=on_confirmed,
         target_fps=settings.max_pipeline_fps,
     )
     pipeline.start()
     app.state.camera = camera
     app.state.pipeline = pipeline
+    app.state.anpr_worker = anpr_worker
 
 
 @app.on_event("shutdown")
 def _shutdown():
-    pipeline = getattr(app.state, "pipeline", None)
-    camera = getattr(app.state, "camera", None)
-    if pipeline is not None:
-        pipeline.stop()
-    if camera is not None:
-        camera.stop()
+    # Stop order matters: pipeline first (no new submits), then the ANPR
+    # worker, then the camera it was reading from.
+    for name in ("pipeline", "anpr_worker", "camera"):
+        worker = getattr(app.state, name, None)
+        if worker is not None:
+            worker.stop()
 
 
 @app.get("/")
 def root():
-    """Greeting endpoint - proves the server is reachable from the LAN."""
+    """Greeting endpoint - replaced by the dashboard router in Task 6."""
     return {"message": "Car Logger is running", "version": APP_VERSION}
 
 

@@ -1,19 +1,19 @@
-"""Pipeline worker: camera -> detector -> tracker -> on_event callback.
+"""Pipeline worker: camera -> detector -> tracker -> on_confirmed callback.
 
-Runs in its own daemon thread. It reads only the latest frame (drops stale
-ones), so it never falls behind and never buffers video."""
+on_confirmed(track, frame) is called once per newly-confirmed track, with the
+frame it was confirmed on (so the caller can crop the plate). The callback owns
+persistence and ANPR submission; the pipeline stays CV-only."""
 
-import json
 import threading
 import time
 
 
 class PipelineWorker(object):
-    def __init__(self, camera, detector, tracker, on_event, target_fps=15):
+    def __init__(self, camera, detector, tracker, on_confirmed, target_fps=15):
         self.camera = camera
         self.detector = detector
         self.tracker = tracker
-        self.on_event = on_event
+        self.on_confirmed = on_confirmed
         self._min_interval = 1.0 / float(target_fps)
         self._running = False
         self._thread = None
@@ -37,7 +37,8 @@ class PipelineWorker(object):
             boxes = [(d.x1, d.y1, d.x2, d.y2) for d in detections]
             self.tracker.update(boxes)
             for track in self.tracker.new_confirmed_tracks():
-                self._emit(track)
+                self.last_event_at = time.time()
+                self.on_confirmed(track, frame)
             self.frames_processed += 1
             elapsed = time.time() - t0
             if elapsed > 0:
@@ -45,15 +46,6 @@ class PipelineWorker(object):
             # Throttle to the target FPS so we don't pin the GPU pointlessly.
             if elapsed < self._min_interval:
                 time.sleep(self._min_interval - elapsed)
-
-    def _emit(self, track):
-        event = {
-            "bbox_json": json.dumps(list(track.box)),
-            "track_id": track.track_id,
-            "anpr_status": "pending",
-        }
-        self.last_event_at = time.time()
-        self.on_event(event)
 
     def stop(self):
         self._running = False
