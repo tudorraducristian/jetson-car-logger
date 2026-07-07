@@ -13,15 +13,24 @@ from car_logger.services.anpr_worker import AnprWorker, cleanup_old_crops
 
 
 class FakeClient(object):
-    def __init__(self, result):
-        self.result = result
+    """Scripted ANPR client: hands out the queued results in order (raising
+    the ones that are exceptions); the last result repeats forever.
+
+    Scripting everything up-front matters: mutating a shared attribute from
+    the test thread while the worker thread reads it is a race condition —
+    the first version of this file did exactly that and failed flakily."""
+
+    def __init__(self, *results):
+        self._results = list(results)
         self.received = []
 
     def read_plate(self, jpg_bytes):
         self.received.append(jpg_bytes)
-        if isinstance(self.result, Exception):
-            raise self.result
-        return self.result
+        result = (self._results.pop(0) if len(self._results) > 1
+                  else self._results[0])
+        if isinstance(result, Exception):
+            raise result
+        return result
 
 
 def make_event(session_factory):
@@ -93,16 +102,15 @@ def test_full_queue_sheds_load_as_skipped(session_factory, tmp_path):
 def test_worker_thread_survives_a_crashing_job(session_factory, tmp_path):
     bad_id = make_event(session_factory)
     good_id = make_event(session_factory)
-    client = FakeClient(PlateResult(status="success", plate_text="CJ10ABC",
+    # scripted: first call blows up, every later call succeeds
+    client = FakeClient(RuntimeError("boom"),
+                        PlateResult(status="success", plate_text="CJ10ABC",
                                     confidence=0.8))
     worker = AnprWorker(client, session_factory,
                         plates_dir=str(tmp_path), maxsize=4)
     worker.start()
     try:
-        client.result = RuntimeError("boom")
         worker.submit(bad_id, b"bad")
-        client.result = PlateResult(status="success", plate_text="CJ10ABC",
-                                    confidence=0.8)
         worker.submit(good_id, b"good")
 
         # poll until the good job lands (worker thread is async to the test)
