@@ -1006,7 +1006,7 @@ def test_vehicles_partial_empty(client):
     assert "No vehicles yet." in resp.text
 ```
 
-- [ ] **Step 5: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 5: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** *(pushed `f108b40`; full suite on the Jetson 2026-07-07: `42 passed`)*
 
 ```bash
 git add car_logger/templates car_logger/api/routes_dashboard.py tests/test_main.py tests/integration/test_dashboard.py
@@ -1030,7 +1030,7 @@ Expected: full suite green (Stage 1–3 + anpr client 6 + cropping 2 + repo addi
 
 **Files:** none (add `data/` to `.gitignore` if missing).
 
-- [ ] **Step 1: Confirm `.gitignore` covers secrets + data** **[LAPTOP — Claude]**
+- [x] **Step 1: Confirm `.gitignore` covers secrets + data** **[LAPTOP — Claude]** *(already covered: `.env` line 12, `data/` line 10 — no commit needed)*
 
 Ensure `.gitignore` contains `.env` and `data/`. If not, add them and commit:
 ```bash
