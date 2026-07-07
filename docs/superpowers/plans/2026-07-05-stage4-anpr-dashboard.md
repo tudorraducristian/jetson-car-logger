@@ -277,7 +277,7 @@ Expected: `6 passed`.
 **Interfaces:**
 - Produces: `crop_to_jpeg(frame_bgr, box) -> bytes` — crops `(x1,y1,x2,y2)` (clamped to frame bounds) and returns JPEG bytes. Consumed by the pipeline (Task 5).
 
-- [ ] **Step 1: Write the failing tests** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing tests** **[LAPTOP — Claude]** *(pushed `2c1d6f3`)*
 
 `tests/unit/test_cropping.py`:
 ```python
@@ -303,7 +303,7 @@ def test_box_clamped_to_frame_bounds():
     assert isinstance(data, bytes) and len(data) > 0
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]** *(RED confirmed 2026-07-07: `ModuleNotFoundError`)*
 
 ```bash
 git add tests/unit/test_cropping.py
@@ -314,7 +314,7 @@ git push
 ```
 Then **[JETSON — student]**: `git pull && python3 -m pytest tests/unit/test_cropping.py -v` → FAIL.
 
-- [ ] **Step 3: Implement cropping** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement cropping** **[LAPTOP — Claude]** *(pushed `0ccb99b`)*
 
 `car_logger/services/cropping.py`:
 ```python
@@ -338,7 +338,7 @@ def crop_to_jpeg(frame_bgr, box):
     return buffer.tobytes()
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** *(student confirmed 2026-07-07: `2 passed`)*
 
 ```bash
 git add car_logger/services/cropping.py
