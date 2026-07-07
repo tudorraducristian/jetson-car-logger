@@ -43,7 +43,7 @@
 **Interfaces:**
 - Produces: `configure_logging(level: str)` — sets up structlog to emit JSON to stdout; `get_logger(name)` re-exported for modules.
 
-- [ ] **Step 1: Write the logging config** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the logging config** **[LAPTOP — Claude]**
 
 `car_logger/logging_config.py`:
 ```python
@@ -76,7 +76,7 @@ def get_logger(name):
     return structlog.get_logger(name)
 ```
 
-- [ ] **Step 2: Call it from `main.py`** **[LAPTOP — Claude]**
+- [x] **Step 2: Call it from `main.py`** **[LAPTOP — Claude]**
 
 At the top of `car_logger/main.py`, after imports and before `app = FastAPI(...)`:
 ```python
@@ -94,7 +94,7 @@ and in `_shutdown()`:
     log.info("app_shutdown")
 ```
 
-- [ ] **Step 3: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 3: Commit and push** **[LAPTOP — Claude]** — `ff2de66`
 
 ```bash
 git add car_logger/logging_config.py car_logger/main.py
@@ -104,7 +104,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 4: Verify JSON logs appear** **[JETSON — student]**
+- [x] **Step 4: Verify JSON logs appear** **[JETSON — student]**
 
 ```bash
 cd ~/jetson-car-logger && source venv/bin/activate && git pull
@@ -116,6 +116,11 @@ configure_logging('INFO'); get_logger('t').info('hello', k=1)
 Expected: a single JSON line containing `"event": "hello"`, `"k": 1`, `"level": "info"`, a timestamp.
 
 **CHECKPOINT:** paste the JSON line before Task 2.
+
+> ✅ 2026-07-07: JSON line verified on the Jetson (`"event": "hello", "k": 1, "level": "info"`).
+> Deviation (deliberate): the resolved level feeds BOTH `basicConfig` and
+> `make_filtering_bound_logger` — the plan hardcoded INFO in the wrapper, which
+> would have made `LOG_LEVEL=DEBUG` a no-op for structlog.
 
 ---
 
@@ -132,7 +137,7 @@ Expected: a single JSON line containing `"event": "hello"`, `"k": 1`, `"level": 
   - `unsubscribe(queue)`
   - `publish(data: str)` — thread-safe; schedules `data` onto every subscriber queue via `call_soon_threadsafe`. Consumed by `main.py` worker callbacks (Task 4) and `/stream/events` (Task 3).
 
-- [ ] **Step 1: Write the failing test** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing test** **[LAPTOP — Claude]**
 
 `tests/unit/test_broker.py`:
 ```python
@@ -169,7 +174,7 @@ def test_publish_without_loop_is_noop():
     EventBroker().publish("changed")
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]** — `6efaf8f`, RED = collection error (module missing)
 
 ```bash
 git add tests/unit/test_broker.py
@@ -185,7 +190,7 @@ python3 -m pytest tests/unit/test_broker.py -v
 ```
 Expected: FAIL — module missing. *(If pytest-asyncio complains it needs a marker mode, add `asyncio_mode = auto` under `[tool:pytest]` in a `pytest.ini`; the async tests use `@pytest.mark.asyncio` which 0.16 supports.)*
 
-- [ ] **Step 3: Implement the broker** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement the broker** **[LAPTOP — Claude]**
 
 `car_logger/services/broker.py`:
 ```python
@@ -223,7 +228,7 @@ class EventBroker(object):
             loop.call_soon_threadsafe(queue.put_nowait, data)
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** — `dfdeb4d`
 
 ```bash
 git add car_logger/services/broker.py
@@ -241,6 +246,8 @@ Expected: `3 passed`.
 
 **CHECKPOINT:** paste output before Task 3.
 
+> ✅ 2026-07-07: `3 passed, 1 warning` on the Jetson.
+
 ---
 
 ### Task 3: SSE endpoint
@@ -253,7 +260,7 @@ Expected: `3 passed`.
 - Consumes: `app.state.broker`.
 - Produces: `GET /stream/events` → `text/event-stream`; emits a `new_event` SSE on each publish and a `heartbeat` every 30s of silence.
 
-- [ ] **Step 1: Write the SSE router** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the SSE router** **[LAPTOP — Claude]**
 
 `car_logger/api/routes_stream.py`:
 ```python
@@ -298,7 +305,7 @@ async def stream_events(request: Request):
     return EventSourceResponse(event_generator())
 ```
 
-- [ ] **Step 2: Create the broker on startup + include the router** **[LAPTOP — Claude]**
+- [x] **Step 2: Create the broker on startup + include the router** **[LAPTOP — Claude]** — deviation: `app.state.broker` is set BEFORE the `enable_pipeline` early-return, so SSE works on camera-less runs/tests
 
 In `car_logger/main.py`:
 - add `from car_logger.api.routes_stream import router as stream_router` and `from car_logger.services.broker import EventBroker`
@@ -306,7 +313,7 @@ In `car_logger/main.py`:
 - at module level: `broker = EventBroker()` and stash it in startup: `app.state.broker = broker`
 - bump `APP_VERSION = "0.5.0"`
 
-- [ ] **Step 3: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 3: Commit and push** **[LAPTOP — Claude]** — `9540f70`
 
 ```bash
 git add car_logger/api/routes_stream.py car_logger/main.py
@@ -316,7 +323,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 4: Live-verify the stream** **[JETSON — student]**
+- [x] **Step 4: Live-verify the stream** **[JETSON — student]**
 
 Run the server, then in another terminal:
 ```bash
@@ -325,6 +332,11 @@ curl -N http://192.168.0.232:8000/stream/events
 Expected: the connection stays open; within 30s a `event: heartbeat` / `data: ping` line appears. Leave it while showing a car to the camera — expect `event: new_event` lines when events are created (after Task 4 wiring). Ctrl+C to stop curl.
 
 **CHECKPOINT:** paste the first few SSE lines before Task 4.
+
+> ✅ 2026-07-07: connection stays open; our `heartbeat` at 30s of silence PLUS
+> sse-starlette's built-in `event: ping` every 15s (library default — redundant
+> keep-alives, harmless; htmx only listens for `new_event`). Jetson has no curl
+> by default — installed via apt (wget -qO- also works).
 
 ---
 
@@ -337,7 +349,7 @@ Expected: the connection stays open; within 30s a `event: heartbeat` / `data: pi
 **Interfaces:**
 - The `on_confirmed` closure publishes `"created"` after inserting the pending event; `on_result` publishes `"updated"` after the ANPR update. The dashboard connects to `/stream/events` and refreshes the feed/stats on `sse:new_event`.
 
-- [ ] **Step 1: Publish from the worker callbacks** **[LAPTOP — Claude]**
+- [x] **Step 1: Publish from the worker callbacks** **[LAPTOP — Claude]** — single `broker.publish("updated")` after the if/else (covers both branches)
 
 In `car_logger/main.py`, inside the `on_confirmed` closure after the event is created:
 ```python
@@ -349,7 +361,7 @@ and inside `on_result` (in `_make_on_result`) after the DB update in both branch
 ```
 > `_make_on_result` must capture `broker` — change its signature to `_make_on_result(broker)` and call it as `_make_on_result(app.state.broker)` in `_startup` (set `app.state.broker = broker` first).
 
-- [ ] **Step 2: Swap polling for SSE in the dashboard** **[LAPTOP — Claude]**
+- [x] **Step 2: Swap polling for SSE in the dashboard** **[LAPTOP — Claude]** — DEVIATION: kept the existing editorial template (event-detail drawer, theme); only swapped `every Ns` triggers for `sse:new_event` + added the search box. sse.js pinned **1.9.12** to match the existing htmx pin, not 1.9.10.
 
 `car_logger/templates/dashboard.html`:
 ```html
@@ -390,7 +402,7 @@ And add the SSE extension to `base.html` `<head>` (after the htmx script):
   <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js"></script>
 ```
 
-- [ ] **Step 3: Make the feed route honour the search query** **[LAPTOP — Claude]**
+- [x] **Step 3: Make the feed route honour the search query** **[LAPTOP — Claude]** — feed limit stays 15 (earlier student decision), not 25
 
 In `car_logger/api/routes_dashboard.py`, update `events_feed` to accept `q`:
 ```python
@@ -402,7 +414,7 @@ def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
     )
 ```
 
-- [ ] **Step 4: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 4: Commit and push** **[LAPTOP — Claude]** — `3a1e0e7`
 
 ```bash
 git add car_logger/main.py car_logger/templates/dashboard.html car_logger/templates/base.html car_logger/api/routes_dashboard.py
@@ -417,6 +429,15 @@ git push
 Run the server, open `/` on the laptop, open DevTools → Network. Expected: exactly **one** long-lived `event-stream` connection to `/stream/events`, and **no** repeating `/partials/*` requests until an SSE `new_event` arrives (then a single burst of partial fetches). Show a car → feed/stats update within a second. Type in the search box → feed filters.
 
 **CHECKPOINT:** confirm the single EventStream + event-driven refresh before Task 5.
+
+> ⏳ PARTIAL 2026-07-07 ~22:30: single EventStream CONFIRMED in DevTools
+> (exactly one `events` row, Type eventsource, Time growing = long-lived).
+> Pipeline live: 16.2 fps, camera ok. REMAINING for tomorrow (2026-07-08,
+> daylight — no detections possible at night): (a) 30s watch with no
+> repeating /partials/* requests, (b) search box filters via ?q=, (c) show a
+> car → single burst of 3 partial fetches within ~1s. Tip: `~/e2e_fake_cam.py`
+> (uncommitted, on the Jetson) can trigger a real detection without a car —
+> costs 1 Plate Recognizer credit per run (~95 left).
 
 ---
 
