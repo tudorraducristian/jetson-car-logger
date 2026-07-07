@@ -7,6 +7,9 @@ STUDENT DECISIONS (confirmed 2026-07-07):
   the documented codes explicitly instead of accepting any 2xx).
 - 429 -> no retry, status='throttled' (respect the published rate limit).
 - 4xx -> no retry, status='failed' (our request is wrong; retrying repeats it).
+- any transport error (httpx.RequestError: timeout, refused connection, dead
+  DNS...) -> same retry policy as timeouts, then status='failed'. A network
+  blip is as transient as a slow server; one policy for all of them.
 """
 
 import time
@@ -45,7 +48,7 @@ class AnprClient(object):
                     headers=headers,
                     timeout=self.timeout,
                 )
-            except httpx.TimeoutException:
+            except httpx.RequestError:
                 if attempt < self.max_retries:
                     attempt += 1
                     time.sleep(0.1 * (2 ** attempt))

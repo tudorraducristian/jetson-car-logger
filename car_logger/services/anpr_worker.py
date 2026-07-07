@@ -6,8 +6,13 @@ callback (which persists it). Under load the queue fills and submit() drops the
 job rather than block the pipeline — a dropped plate read is acceptable; a
 stalled pipeline is not."""
 
+import logging
 import queue
 import threading
+
+from car_logger.services.anpr_client import PlateResult
+
+log = logging.getLogger(__name__)
 
 
 class AnprWorker(object):
@@ -36,14 +41,28 @@ class AnprWorker(object):
         return self._queue.qsize()
 
     def _loop(self):
+        # Defense in depth (student decision, 2026-07-07): this thread is a
+        # single point of failure — if it dies, every later event silently
+        # stays 'pending'. So NOTHING a job throws may escape this loop; we
+        # log it loudly instead, and the event still gets a result.
         while self._running:
             try:
                 event_id, crop_bytes = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
             try:
-                result = self._client.read_plate(crop_bytes)
-                self._on_result(event_id, result, crop_bytes)
+                try:
+                    result = self._client.read_plate(crop_bytes)
+                except Exception:
+                    log.exception(
+                        "ANPR client raised for event %s; marking it failed",
+                        event_id)
+                    result = PlateResult(None, None, "failed")
+                try:
+                    self._on_result(event_id, result, crop_bytes)
+                except Exception:
+                    log.exception(
+                        "on_result callback raised for event %s", event_id)
             finally:
                 self._queue.task_done()
 
