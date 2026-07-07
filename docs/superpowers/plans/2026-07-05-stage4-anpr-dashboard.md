@@ -20,6 +20,27 @@
 - **Split execution:** **[LAPTOP — Claude]** writes/commits/pushes; **[JETSON — student]** pulls and runs. Paste output at each **CHECKPOINT**.
 - **Commit trailer:** `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 
+## Student amendments (2026-07-07, before re-execution)
+
+A first pass was executed off PLAN.md instead of this plan and reverted
+(`8691fbd`). Decisions the student locked in for this re-run; where they
+conflict with a task below, the amendment wins:
+
+- **Retry policy confirmed as documented:** timeout 5.0s, max_retries 2
+  (exponential backoff), 429 → no retry (`throttled`), 4xx → no retry.
+- **Crops are saved for every ANPR outcome, not only success** — a failed
+  read's image is the debugging evidence (amends Task 5 `_make_on_result`).
+- **Retention cleanup lands in this stage, not Stage 5:** delete crops
+  older than 30 days at startup (Stage 5's plan doesn't actually contain
+  it). Small addition in Task 5.
+- **Missing API key behaves as the plan says** (client calls and fails) —
+  no special-casing.
+- **Task 6 templates:** reuse the richer ui-ux-pro-max set from the first
+  pass (this plan marks its templates as "the floor, not the ceiling");
+  context keys must match `event_stats`.
+- Commit trailer uses the current model:
+  `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+
 ## File structure (what this stage creates)
 
 - `car_logger/services/anpr_client.py` — `AnprClient` (httpx + retry policy; unit-tested with `MockTransport`)
