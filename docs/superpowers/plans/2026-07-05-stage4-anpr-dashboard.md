@@ -366,7 +366,7 @@ Then **[JETSON — student]**: `git pull && python3 -m pytest tests/unit/test_cr
   - `list_vehicles(db, skip=0, limit=50) -> List[Vehicle]` (newest `last_seen_at` first)
   - `event_stats(db) -> dict` → `{"total_events": int, "plates_read": int, "unique_vehicles": int}`
 
-- [ ] **Step 1: Write the failing tests** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing tests** **[LAPTOP — Claude]** *(pushed `1739a1e`)*
 
 Append to `tests/unit/test_repositories.py`:
 ```python
@@ -405,7 +405,7 @@ def test_event_stats_counts(db_session):
     assert stats["unique_vehicles"] == 1
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]** *(RED confirmed 2026-07-07: 3 failed `AttributeError`, 6 passed)*
 
 ```bash
 git add tests/unit/test_repositories.py
@@ -416,7 +416,7 @@ git push
 ```
 Then **[JETSON — student]**: `git pull && python3 -m pytest tests/unit/test_repositories.py -v` → the 3 new tests FAIL.
 
-- [ ] **Step 3: Implement the repository additions** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement the repository additions** **[LAPTOP — Claude]** *(pushed `4b222e8`)*
 
 Append to `car_logger/repositories.py` (add `from datetime import datetime` and `from car_logger.models import Vehicle` to the imports):
 ```python
@@ -473,7 +473,7 @@ def event_stats(db):
     }
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** *(student confirmed 2026-07-07: `9 passed`)*
 
 ```bash
 git add car_logger/repositories.py
