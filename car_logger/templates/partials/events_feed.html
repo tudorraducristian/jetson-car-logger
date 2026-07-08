@@ -29,7 +29,7 @@
       </span>
       {{ m.status_badge(event.anpr_status) }}
       <time class="w-16 flex-none text-right font-mono text-xs text-paper-dim">
-        {{ event.timestamp.strftime('%H:%M:%S') }}
+        {{ (event.timestamp | localtime).strftime('%H:%M:%S') }}
       </time>
     </button>
     <button type="button"

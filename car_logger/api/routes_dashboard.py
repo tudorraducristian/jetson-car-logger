@@ -1,11 +1,13 @@
 """Dashboard routes: the full page plus the htmx partials.
 
-The full page (GET /) is just a skeleton; every panel then pulls its own
-fragment from /partials/* on a timer. The same repository functions feed
-both the JSON API and these HTML fragments — only the presentation differs.
+The full page (GET /) is just a skeleton; every panel loads its fragment
+from /partials/* once, then re-fetches when an SSE change-signal arrives.
+The same repository functions feed both the JSON API and these HTML
+fragments — only the presentation differs.
 """
 
 import os
+from datetime import timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
@@ -18,6 +20,20 @@ TEMPLATES_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+
+def localtime(dt):
+    """Naive-UTC datetime from the DB -> aware datetime in the OS timezone.
+
+    We store UTC (unambiguous, DST-proof); the display zone comes from the
+    system, so `timedatectl set-timezone Europe/Bucharest` on the Jetson is
+    what makes this Romania time."""
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc).astimezone()
+
+
+templates.env.filters["localtime"] = localtime
 
 router = APIRouter(tags=["dashboard"], include_in_schema=False)
 

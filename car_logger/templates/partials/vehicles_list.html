@@ -10,7 +10,7 @@
       {{ 'trecere' if vehicle.total_sightings == 1 else 'treceri' }}
     </span>
     <time class="w-24 flex-none text-right font-mono text-xs text-paper-faint">
-      {{ vehicle.last_seen_at.strftime('%d %b %H:%M') }}
+      {{ (vehicle.last_seen_at | localtime).strftime('%d %b %H:%M') }}
     </time>
   </li>
   {% endfor %}

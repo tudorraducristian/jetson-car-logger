@@ -36,8 +36,8 @@
       </dd>
     </div>
     <div>
-      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Moment (UTC)</dt>
-      <dd class="mt-1 font-mono text-paper">{{ event.timestamp.strftime('%d %b %Y %H:%M:%S') }}</dd>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Moment</dt>
+      <dd class="mt-1 font-mono text-paper">{{ (event.timestamp | localtime).strftime('%d %b %Y %H:%M:%S') }}</dd>
     </div>
     <div>
       <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Track</dt>

@@ -453,6 +453,14 @@ Run the server, open `/` on the laptop, open DevTools → Network. Expected: exa
 - Produces: `repositories.delete_event(db, event_id) -> bool`; `DELETE /api/events/{id}` → 204 or 404; a delete button per feed row.
 
 > **STUDENT DECISION:** PLAN lists several polish features (plate search ✓ done in Task 4, "mark vehicle as known" notes edit, 24h/7d stats toggle, delete). Pick which to ship by time. Delete is implemented here as one concrete example; the others follow the same route+repo+template pattern.
+>
+> ✅ 2026-07-08: student picked a second polish after spotting that the feed
+> showed 06:53 for a 09:53 event — timestamps are stored UTC (`utcnow()`) but
+> were rendered raw. Added a `localtime` Jinja filter (routes_dashboard.py):
+> `replace(tzinfo=utc).astimezone()` — the OS timezone (set via `timedatectl`)
+> decides the display zone, DST handled by the system, zero new deps. Applied
+> in events_feed, event_detail (label "Moment (UTC)" → "Moment"), and
+> vehicles_list; invariant-tested in tests/unit/test_template_filters.py.
 
 - [x] **Step 1: Write the failing test** **[LAPTOP — Claude]** — `d4ad7dc`
 
