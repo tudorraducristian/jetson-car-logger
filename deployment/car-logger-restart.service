@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily restart of car-logger (memory-fragmentation mitigation)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl restart car-logger.service

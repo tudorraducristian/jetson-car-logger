@@ -1,0 +1,20 @@
+[Unit]
+Description=Car Logger appliance (FastAPI + CV pipeline)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tudor
+WorkingDirectory=/home/tudor/jetson-car-logger
+ExecStartPre=/home/tudor/jetson-car-logger/venv/bin/alembic upgrade head
+ExecStart=/home/tudor/jetson-car-logger/venv/bin/uvicorn car_logger.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+Environment=PATH=/home/tudor/jetson-car-logger/venv/bin:/usr/bin:/bin
+# stdout goes to a journald pipe, not a tty: without this Python block-buffers
+# it and the JSON logs would reach journalctl late (or never, on a crash).
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

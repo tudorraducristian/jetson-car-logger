@@ -531,7 +531,7 @@ Add a delete button in `car_logger/templates/partials/events_feed.html` inside e
             hx-target="closest li" hx-swap="outerHTML">✕</button>
 ```
 
-- [ ] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 4: Commit, push, confirm GREEN** **[LAPTOP — Claude then JETSON — student]** — `7c43ee7` (delete), `a7f43cb` (localtime polish)
 
 ```bash
 git add car_logger/repositories.py car_logger/api/routes_events.py car_logger/templates/partials/events_feed.html
@@ -544,6 +544,11 @@ Then **[JETSON — student]**: `git pull && python3 -m pytest tests/ -v` → ful
 
 **CHECKPOINT:** paste the full suite result before Task 6.
 
+> ✅ 2026-07-08 ~10:12: **53 passed** (full suite, Jetson). Live verify:
+> DELETE seen in DevTools as a 204 followed by the SSE-triggered partial
+> refresh; rows removed without reload, stats 12→9; timestamps now display
+> Romania time (09:53:42 where UTC said 06:53:42). Task 5 done.
+
 ---
 
 ### Task 6: systemd service (auto-start, restart, daily refresh)
@@ -555,7 +560,7 @@ Then **[JETSON — student]**: `git pull && python3 -m pytest tests/ -v` → ful
 **Interfaces:**
 - Produces: an installed, enabled `car-logger` systemd service + a daily-restart timer.
 
-- [ ] **Step 1: Write the unit files** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the unit files** **[LAPTOP — Claude]** — deviation: added `Environment=PYTHONUNBUFFERED=1` (stdout to journald is a pipe; Python would block-buffer the JSON logs)
 
 `deployment/car-logger.service`:
 ```ini
@@ -601,7 +606,7 @@ Persistent=true
 WantedBy=timers.target
 ```
 
-- [ ] **Step 2: Write the install script** **[LAPTOP — Claude]**
+- [x] **Step 2: Write the install script** **[LAPTOP — Claude]**
 
 `scripts/install_service.sh`:
 ```bash
@@ -644,8 +649,10 @@ Expected: `Active: active (running)`. Then confirm the dashboard is reachable at
 sudo reboot
 # wait ~60s, then from the laptop:
 curl http://192.168.0.232:8000/health
-# back on the Jetson, prove restart-on-failure:
-sudo pkill -f uvicorn ; sleep 10 ; systemctl status car-logger --no-pager | head
+# back on the Jetson, prove restart-on-failure — NOTE the -9: plain pkill
+# sends SIGTERM, uvicorn exits CLEANLY (code 0) and Restart=on-failure
+# would rightly NOT restart it. A crash is SIGKILL:
+sudo pkill -9 -f uvicorn ; sleep 10 ; systemctl status car-logger --no-pager | head
 journalctl -u car-logger -n 20 --no-pager
 ```
 Expected: after reboot the dashboard answers within 60s; after `pkill`, systemd restarts it within ~10s; `journalctl` shows the JSON logs.
