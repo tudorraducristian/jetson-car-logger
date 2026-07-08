@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Four discrete CSS-only animations that make the dashboard feel alive: fresh event rows slide in with a fading gold edge, the pipeline status dot pulses, the stat counters pop when they change, and the detail drawer fades up on open.
+**Goal:** Four discrete CSS-only animations that make the dashboard feel alive — fresh event rows slide in with a fading gold edge, the pipeline status dot pulses, the stat counters pop when they change, the detail drawer fades up on open — plus one display polish: plate chips render in uppercase everywhere.
 
 **Architecture:** All motion is CSS keyframes in `base.html` — zero new JavaScript, zero dependencies. The only server-side logic is "which row is new": the feed route passes a `fresh_cutoff` timestamp (now − 10s, naive UTC like the DB values) and the template marks fresher rows with class `row-new`. Server-side rendering stays the single source of truth, and the marking is integration-testable (RED→GREEN). Everything else re-renders via the existing SSE-triggered swaps, so entrance animations replay naturally when fragments are re-inserted.
 
@@ -27,6 +27,7 @@
 - `tests/integration/test_dashboard.py` — freshness-marking tests (Task 2)
 - `car_logger/templates/partials/stats.html` — pulsing dot + counter pop (Task 3)
 - `car_logger/templates/partials/event_detail.html` — drawer fade-up (Task 4)
+- `car_logger/templates/partials/macros.html` — uppercase plate chips (Task 5)
 
 ---
 
@@ -274,7 +275,35 @@ git push
 
 ---
 
-### Task 5: Live checkpoint on the device
+### Task 5: Uppercase plate chips (student request 2026-07-08)
+
+**Files:**
+- Modify: `car_logger/templates/partials/macros.html` (the `plate_chip` macro)
+
+**Interfaces:**
+- Display-only: the DB keeps whatever casing the ANPR API returns (lowercase); CSS `text-transform` changes rendering everywhere the shared macro is used (feed, drawer, vehicles). Search is unaffected — SQLite `LIKE` is already case-insensitive for ASCII.
+
+- [ ] **Step 1: Add `uppercase` to the chip** **[LAPTOP — Claude]**
+
+In `macros.html`, the populated-chip `<span>` gains the Tailwind `uppercase` class:
+
+```html
+    <span class="inline-block rounded border border-paper-faint/60 bg-ink-800 px-2 py-0.5 font-mono text-sm font-medium uppercase tracking-widest text-paper">
+```
+
+- [ ] **Step 2: Commit and push** **[LAPTOP — Claude]**
+
+```bash
+git add car_logger/templates/partials/macros.html
+git commit -m "style(ui): plate chips render uppercase everywhere
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+git push
+```
+
+---
+
+### Task 6: Live checkpoint on the device
 
 - [ ] **Step 1: Deploy** **[JETSON — student]**
 
@@ -293,6 +322,7 @@ Open the dashboard, then trigger one detection (printed photo or `~/e2e_fake_cam
 3. The green "pipeline activ" dot pulses continuously.
 4. Clicking a row: the detail drawer content fades up.
 5. Hovering a row: it slides 2px right, smoothly.
+6. Every plate chip (feed, drawer, vehicles) reads uppercase: `MMM8748`.
 
 **CHECKPOINT:** describe what you saw (or screen-record it — it doubles as demo-video footage). Any animation that did NOT play gets debugged by the student per CLAUDE.md (Claude explains, student fixes).
 
@@ -300,7 +330,7 @@ Open the dashboard, then trigger one detection (printed photo or `~/e2e_fake_cam
 
 ## Self-Review
 
-**1. Spec coverage:** fresh-row entrance + gold flash (Tasks 1+2, tested), pulsing dot (Task 3), counter pop (Tasks 1+3), drawer fade + hover slide (Tasks 1+4), discrete intensity (constraint + durations), reduced-motion (existing global rule, kept last), after-v1.0 gate (Global Constraints). ✓
+**1. Spec coverage:** fresh-row entrance + gold flash (Tasks 1+2, tested), pulsing dot (Task 3), counter pop (Tasks 1+3), drawer fade + hover slide (Tasks 1+4), uppercase plate chips (Task 5, student request), discrete intensity (constraint + durations), reduced-motion (existing global rule, kept last), after-v1.0 gate (Global Constraints). ✓
 
 **2. Placeholder scan:** every step carries exact code/commands; no TBDs. ✓
 
