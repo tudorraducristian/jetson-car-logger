@@ -36,3 +36,14 @@ def test_list_events_plate_filter(client):
 def test_list_events_limit_over_100_rejected(client):
     resp = client.get("/api/events", params={"limit": 500})
     assert resp.status_code == 422  # Query(le=100) enforces the ceiling
+
+
+def test_delete_event(client):
+    created = client.post("/api/events", json={"plate_text": "DEL123"}).json()
+    resp = client.delete("/api/events/" + str(created["id"]))
+    assert resp.status_code == 204
+    assert client.get("/api/events/" + str(created["id"])).status_code == 404
+
+
+def test_delete_missing_event_is_404(client):
+    assert client.delete("/api/events/9999").status_code == 404
