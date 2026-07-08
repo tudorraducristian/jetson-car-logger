@@ -424,20 +424,22 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 5: Verify live updates + no polling** **[JETSON — student]**
+- [x] **Step 5: Verify live updates + no polling** **[JETSON — student]**
 
 Run the server, open `/` on the laptop, open DevTools → Network. Expected: exactly **one** long-lived `event-stream` connection to `/stream/events`, and **no** repeating `/partials/*` requests until an SSE `new_event` arrives (then a single burst of partial fetches). Show a car → feed/stats update within a second. Type in the search box → feed filters.
 
 **CHECKPOINT:** confirm the single EventStream + event-driven refresh before Task 5.
 
-> ⏳ PARTIAL 2026-07-07 ~22:30: single EventStream CONFIRMED in DevTools
-> (exactly one `events` row, Type eventsource, Time growing = long-lived).
-> Pipeline live: 16.2 fps, camera ok. REMAINING for tomorrow (2026-07-08,
-> daylight — no detections possible at night): (a) 30s watch with no
-> repeating /partials/* requests, (b) search box filters via ?q=, (c) show a
-> car → single burst of 3 partial fetches within ~1s. Tip: `~/e2e_fake_cam.py`
-> (uncommitted, on the Jetson) can trigger a real detection without a car —
-> costs 1 Plate Recognizer credit per run (~95 left).
+> ✅ 2026-07-08 ~09:53: checkpoint complete. (a) no polling — one `events-feed`
+> in 45s where 2s-polling would have shown ~20; (b) `events-feed?q=mmm` fired
+> once, feed filtered; (c) via `~/e2e_fake_cam.py` (own full app instance —
+> must STOP the real server first, it binds :8000; student hit Errno 98 twice
+> before stopping it): EventSource died (server stop), 5 retries at ~2s
+> (ERR_CONNECTION_REFUSED), auto-reconnected to the fake instance, then TWO
+> SSE-triggered feed fetches (`created` + `updated`) — event #12 `mmm8748`
+> appeared without refresh, stats 11→12, plates 5→6. 1 credit used (~94 left).
+> Noted quirk (possible Task 5 polish): SSE-triggered feed re-fetch drops the
+> active `?q=` filter — box still shows the query, feed shows everything.
 
 ---
 
