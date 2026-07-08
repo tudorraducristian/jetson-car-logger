@@ -40,11 +40,13 @@ router = APIRouter(tags=["dashboard"], include_in_schema=False)
 
 @router.get("/")
 def dashboard(request: Request):
+    """The page skeleton; each panel then loads its own /partials fragment."""
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @router.get("/partials/events-feed")
 def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
+    """Feed fragment, newest first; `q` filters by plate substring."""
     events = repositories.list_events(db, limit=15, plate_text=(q or None))
     return templates.TemplateResponse(
         "partials/events_feed.html",
@@ -53,6 +55,7 @@ def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
 
 @router.get("/partials/vehicles-list")
 def vehicles_list(request: Request, db: Session = Depends(get_db)):
+    """Sidebar fragment: unique plates, most recently seen first."""
     vehicles = repositories.list_vehicles(db, limit=8)
     return templates.TemplateResponse(
         "partials/vehicles_list.html",
@@ -61,6 +64,7 @@ def vehicles_list(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/partials/stats")
 def stats(request: Request, db: Session = Depends(get_db)):
+    """Counters + live pipeline health for the stats fragment."""
     pipeline = getattr(request.app.state, "pipeline", None)
     camera = getattr(request.app.state, "camera", None)
     anpr_worker = getattr(request.app.state, "anpr_worker", None)
@@ -85,6 +89,7 @@ def event_detail_empty(request: Request):
 @router.get("/partials/event/{event_id}")
 def event_detail(event_id: int, request: Request,
                  db: Session = Depends(get_db)):
+    """Detail-drawer fragment for one event, or 404."""
     event = repositories.get_event(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")

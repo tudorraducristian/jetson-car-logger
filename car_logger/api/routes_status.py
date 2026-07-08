@@ -7,6 +7,7 @@ router = APIRouter(prefix="/api", tags=["status"])
 
 @router.get("/status")
 def status(request: Request):
+    """Machine-readable pipeline health; the stats partial shows the same data."""
     pipeline = getattr(request.app.state, "pipeline", None)
     camera = getattr(request.app.state, "camera", None)
     if pipeline is None:

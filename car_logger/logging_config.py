@@ -7,6 +7,7 @@ import structlog
 
 
 def configure_logging(level="INFO"):
+    """Send stdlib + structlog output to stdout, one JSON line per event."""
     # Resolve once, use for BOTH stdlib and structlog filtering — otherwise
     # LOG_LEVEL=DEBUG would change stdlib but structlog would stay at INFO.
     resolved = getattr(logging, level.upper(), logging.INFO)
@@ -27,4 +28,5 @@ def configure_logging(level="INFO"):
 
 
 def get_logger(name):
+    """Named structlog logger; modules call this instead of importing structlog."""
     return structlog.get_logger(name)

@@ -17,6 +17,7 @@ MAX_LIST_LIMIT = 100
 
 
 def create_event(db: Session, event: schemas.EventCreate) -> Event:
+    """Insert a new Event and return it with its generated id."""
     db_event = Event(**event.dict())
     db.add(db_event)
     db.commit()
@@ -31,6 +32,7 @@ def get_event(db: Session, event_id: int) -> Optional[Event]:
 
 def list_events(db: Session, skip: int = 0, limit: int = 50,
                 plate_text: Optional[str] = None) -> List[Event]:
+    """Newest-first page of events; optional plate substring filter."""
     capped = min(limit, MAX_LIST_LIMIT)
     query = db.query(Event)
     if plate_text:
@@ -87,6 +89,7 @@ def upsert_vehicle_for_plate(db, plate_text):
 
 
 def list_vehicles(db, skip=0, limit=50):
+    """Vehicles by most-recent sighting, newest first."""
     capped = min(limit, MAX_LIST_LIMIT)
     return (db.query(Vehicle)
               .order_by(Vehicle.last_seen_at.desc())
@@ -94,6 +97,7 @@ def list_vehicles(db, skip=0, limit=50):
 
 
 def event_stats(db):
+    """The three dashboard counters: events, plates read, unique vehicles."""
     total = db.query(Event).count()
     plates = db.query(Event).filter(Event.plate_text.isnot(None)).count()
     vehicles = db.query(Vehicle).count()

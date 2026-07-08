@@ -14,6 +14,7 @@ router = APIRouter(prefix="/api/events", tags=["events"])
 
 @router.post("", response_model=schemas.EventRead)
 def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
+    """Create an event over HTTP (tests/tools); the pipeline writes via the repository."""
     return repositories.create_event(db, event)
 
 
@@ -22,12 +23,14 @@ def list_events(skip: int = 0,
                 limit: int = Query(50, ge=1, le=100),
                 plate: Optional[str] = None,
                 db: Session = Depends(get_db)):
+    """List events newest-first; optional plate substring filter."""
     return repositories.list_events(db, skip=skip, limit=limit,
                                     plate_text=plate)
 
 
 @router.get("/{event_id}", response_model=schemas.EventRead)
 def get_event(event_id: int, db: Session = Depends(get_db)):
+    """One event by id, or 404."""
     event = repositories.get_event(db, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -37,6 +40,7 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 @router.delete("/{event_id}", status_code=204)
 def delete_event(event_id: int, request: Request,
                  db: Session = Depends(get_db)):
+    """Delete an event: 204 on success, 404 if unknown."""
     if not repositories.delete_event(db, event_id):
         raise HTTPException(status_code=404, detail="Event not found")
     # A delete is a write like any other write: publish so every open

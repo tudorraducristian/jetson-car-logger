@@ -624,7 +624,7 @@ sudo systemctl enable --now car-logger-restart.timer
 sudo systemctl status car-logger.service --no-pager
 ```
 
-- [ ] **Step 3: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 3: Commit and push** **[LAPTOP — Claude]** — `2f481c1`
 
 ```bash
 git add deployment/ scripts/install_service.sh
@@ -634,7 +634,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 4: Install and verify** **[JETSON — student]**
+- [x] **Step 4: Install and verify** **[JETSON — student]**
 
 ```bash
 cd ~/jetson-car-logger && git pull
@@ -643,7 +643,7 @@ chmod +x scripts/install_service.sh
 ```
 Expected: `Active: active (running)`. Then confirm the dashboard is reachable at `http://192.168.0.232:8000/` **without** a manually-run uvicorn.
 
-- [ ] **Step 5: Reboot + restart-on-failure tests** **[JETSON — student]**
+- [x] **Step 5: Reboot + restart-on-failure tests** **[JETSON — student]**
 
 ```bash
 sudo reboot
@@ -659,6 +659,16 @@ Expected: after reboot the dashboard answers within 60s; after `pkill`, systemd 
 
 **CHECKPOINT:** paste `systemctl status` + the post-reboot `curl /health` before Task 7.
 
+> ✅ 2026-07-08 ~10:27: dashboard answered after reboot with nothing started
+> manually (ExecStartPre ran alembic, status=0). Crash test with `pkill -9`
+> (plan originally had plain pkill — SIGTERM exits cleanly and on-failure
+> would rightly not restart): systemd brought it back as PID 8061, ~24s
+> including alembic + TRT engine load; the laptop's EventSource auto-
+> reconnected to /stream/events. `list-timers` shows Thu 04:00 scheduled.
+> Bonus lesson: `sudo pkill -9 -f uvicorn` SIGKILLed its own sudo (the -f
+> pattern matched sudo's cmdline) — bash printed "Killed"; harmless.
+> JSON logs confirmed flowing into journalctl (PYTHONUNBUFFERED=1).
+
 ---
 
 ### Task 7: README + architecture doc + final cleanup
@@ -670,24 +680,24 @@ Expected: after reboot the dashboard answers within 60s; after `pkill`, systemd 
 
 **Interfaces:** documentation only.
 
-- [ ] **Step 1: Draft the README** **[LAPTOP — Claude]**
+- [x] **Step 1: Draft the README** **[LAPTOP — Claude]**
 
 Rewrite `README.md` covering: what it does; the layered architecture (with the ASCII diagram from the roadmap); hardware requirements; install from scratch (clone → venv `--system-site-packages` → `pip install -r requirements.txt` → `.env` → `alembic upgrade head` → `scripts/install_service.sh`); configuration (`.env` fields); dev-run vs production (uvicorn `--reload` vs systemd); known limitations; future work (CV v2). Keep placeholders out — write the real content.
 
 > **Student owns the voice.** Per PLAN.md 5.6, the student rewrites anything that doesn't read as their own understanding. Claude drafts; the student edits.
 
-- [ ] **Step 2: Write the architecture doc** **[LAPTOP — Claude]**
+- [x] **Step 2: Write the architecture doc** **[LAPTOP — Claude]** — drafted; student rewrites in own voice before the review
 
 `docs/architecture.md` (1–2 pages): why threading (camera blocks; pipeline must not stall the API); why SQLite (single-file, zero-setup, enough for LAN scope); why the repository layer (testable, reusable from the pipeline); why htmx over React (no build step, server-rendered, one language); why SSE over polling/WebSocket (one-way, simpler, live). This is primarily the student's understanding — Claude reviews for clarity only.
 
-- [ ] **Step 3: Final cleanup pass** **[LAPTOP — Claude]**
+- [x] **Step 3: Final cleanup pass** **[LAPTOP — Claude]** — no print()/TODO/FIXME found (cleaned during earlier stages); `.env.example` already had all 8 settings; added ~20 one-line docstrings (API routes, repositories, broker, logging); fixed stale "on a timer" module docstring in routes_dashboard (SSE now)
 
 - Remove any debug/learning logging added in earlier stages (e.g. session create/close prints from PLAN 2.2).
 - Ensure every public function has a docstring.
 - Update `.env.example` to include every settings field used (`DATABASE_URL`, `ANPR_API_KEY`, `ANPR_API_URL`, `LOG_LEVEL`, `MAX_PIPELINE_FPS`, `DETECTOR_THRESHOLD`, `CAMERA_INDEX`, `ENABLE_PIPELINE`).
 - Grep for `TODO`/`FIXME`/commented-out code and remove.
 
-- [ ] **Step 4: Commit and push** **[LAPTOP — Claude]**
+- [x] **Step 4: Commit and push** **[LAPTOP — Claude]**
 
 ```bash
 git add README.md docs/architecture.md .env.example car_logger

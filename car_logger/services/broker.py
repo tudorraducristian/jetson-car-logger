@@ -13,14 +13,17 @@ class EventBroker(object):
         self._loop = None
 
     def set_loop(self, loop):
+        """Remember the serving event loop; publish() is a no-op until then."""
         self._loop = loop
 
     async def subscribe(self):
+        """Create and register one queue per connected SSE client."""
         queue = asyncio.Queue()
         self._subscribers.add(queue)
         return queue
 
     def unsubscribe(self, queue):
+        """Forget a client's queue; safe to call for an unknown queue."""
         self._subscribers.discard(queue)
 
     def publish(self, data):
