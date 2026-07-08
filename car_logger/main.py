@@ -28,6 +28,10 @@ CROP_RETENTION_DAYS = 30  # student decision: old crops are disk noise after a m
 app = FastAPI(title="Car Logger", version=APP_VERSION)
 
 broker = EventBroker()
+# On app.state at import time, not in startup: the tests' TestClient never
+# fires startup events, yet the delete route and /stream/events need it.
+# publish() before any subscriber/loop exists is a documented no-op.
+app.state.broker = broker
 
 app.include_router(events_router)
 app.include_router(status_router)
@@ -94,9 +98,6 @@ def _make_on_result(broker):
 @app.on_event("startup")
 def _startup():
     _cleanup_old_crops()
-    # Before the early return: /stream/events needs the broker even when the
-    # pipeline is disabled (tests, laptop dev-runs without camera).
-    app.state.broker = broker
     if not settings.enable_pipeline:
         return
     # Imported here (not at module top) so importing main.py without a camera

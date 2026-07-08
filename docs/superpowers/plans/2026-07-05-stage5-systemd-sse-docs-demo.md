@@ -454,7 +454,7 @@ Run the server, open `/` on the laptop, open DevTools → Network. Expected: exa
 
 > **STUDENT DECISION:** PLAN lists several polish features (plate search ✓ done in Task 4, "mark vehicle as known" notes edit, 24h/7d stats toggle, delete). Pick which to ship by time. Delete is implemented here as one concrete example; the others follow the same route+repo+template pattern.
 
-- [ ] **Step 1: Write the failing test** **[LAPTOP — Claude]**
+- [x] **Step 1: Write the failing test** **[LAPTOP — Claude]** — `d4ad7dc`
 
 Append to `tests/integration/test_api_events.py`:
 ```python
@@ -469,7 +469,7 @@ def test_delete_missing_event_is_404(client):
     assert client.delete("/api/events/9999").status_code == 404
 ```
 
-- [ ] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]**
+- [x] **Step 2: Commit, push, confirm RED** **[LAPTOP — Claude then JETSON — student]** — RED confirmed 2026-07-08: `2 failed, 6 passed`
 
 ```bash
 git add tests/integration/test_api_events.py
@@ -480,7 +480,21 @@ git push
 ```
 Then **[JETSON — student]**: `git pull && python3 -m pytest tests/integration/test_api_events.py -v` → new tests FAIL.
 
-- [ ] **Step 3: Implement delete** **[LAPTOP — Claude]**
+- [x] **Step 3: Implement delete** **[LAPTOP — Claude]**
+
+> DEVIATIONS 2026-07-08 (all deliberate):
+> 1. htmx 1.x never swaps a 204 response (`shouldSwap` excludes it), so the
+>    planned `hx-target="closest li"` button would have left the row on screen
+>    and the stats stale. Instead the DELETE route publishes `"deleted"` on the
+>    broker — the SSE round-trip refreshes feed+stats+vehicles, consistent with
+>    Task 4's "publish on writes". The button has no hx-target at all.
+> 2. `app.state.broker` moved from `_startup()` to module level in `main.py`:
+>    the TestClient fixture never fires startup events, and the delete route
+>    needs the broker during tests (publish with no loop is a documented no-op).
+> 3. The feed row is a full-width `<button>` (detail drawer) — nesting the
+>    delete button inside it is invalid HTML. The `<li>` became a flex row with
+>    the delete button as a sibling; `hover:text-rose-400` matches the "eșuat"
+>    badge palette; `hx-confirm` text is Romanian like the rest of the UI.
 
 Append to `car_logger/repositories.py`:
 ```python

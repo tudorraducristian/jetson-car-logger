@@ -3,12 +3,12 @@
 {% if events %}
 <ul class="divide-y divide-ink-700 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
   {% for event in events %}
-  <li>
+  <li class="flex items-stretch">
     <button type="button"
             hx-get="/partials/event/{{ event.id }}"
             hx-target="#event-detail"
             hx-swap="innerHTML"
-            class="flex w-full cursor-pointer items-center gap-4 px-4 py-3 text-left transition-colors duration-150 hover:bg-ink-850 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
+            class="flex min-w-0 flex-1 cursor-pointer items-center gap-4 px-4 py-3 text-left transition-colors duration-150 hover:bg-ink-850 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
       {% if event.image_path %}
       <img src="/data/plates/{{ event.id }}.jpg" alt="Crop eveniment {{ event.id }}"
            width="56" height="42" loading="lazy"
@@ -32,6 +32,11 @@
         {{ event.timestamp.strftime('%H:%M:%S') }}
       </time>
     </button>
+    <button type="button"
+            hx-delete="/api/events/{{ event.id }}"
+            hx-confirm="Ștergi evenimentul #{{ event.id }}?"
+            aria-label="Șterge evenimentul #{{ event.id }}"
+            class="flex-none cursor-pointer px-3 text-paper-faint transition-colors duration-150 hover:bg-ink-850 hover:text-rose-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">✕</button>
   </li>
   {% endfor %}
 </ul>

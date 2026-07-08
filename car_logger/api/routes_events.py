@@ -2,7 +2,8 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (APIRouter, Depends, HTTPException, Query, Request,
+                     Response)
 from sqlalchemy.orm import Session
 
 from car_logger import repositories, schemas
@@ -31,3 +32,15 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
+
+
+@router.delete("/{event_id}", status_code=204)
+def delete_event(event_id: int, request: Request,
+                 db: Session = Depends(get_db)):
+    if not repositories.delete_event(db, event_id):
+        raise HTTPException(status_code=404, detail="Event not found")
+    # A delete is a write like any other write: publish so every open
+    # dashboard refreshes its feed AND stats via SSE. htmx ignores the 204
+    # body, so the SSE round-trip is what removes the row from the page.
+    request.app.state.broker.publish("deleted")
+    return Response(status_code=204)

@@ -58,6 +58,16 @@ def update_event_anpr(db, event_id, plate_text, confidence, status,
     return event
 
 
+def delete_event(db: Session, event_id: int) -> bool:
+    """Delete the event. Returns True if it existed, False otherwise."""
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if event is None:
+        return False
+    db.delete(event)
+    db.commit()
+    return True
+
+
 def upsert_vehicle_for_plate(db, plate_text):
     """Create the vehicle for this plate or bump its sighting counters."""
     now = datetime.utcnow()
