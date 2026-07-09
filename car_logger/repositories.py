@@ -61,14 +61,33 @@ def update_event_anpr(db, event_id, plate_text, confidence, status,
     return event
 
 
-def delete_event(db: Session, event_id: int) -> bool:
-    """Delete the event. Returns True if it existed, False otherwise."""
+def delete_event(db, event_id):
+    """Delete the event and repair its vehicle's aggregates.
+
+    Returns (existed, image_path) — image_path so the caller can remove
+    the crop file AFTER the DB commit succeeds. If this was the vehicle's
+    last event, the vehicle goes too: an identity with zero evidence is
+    noise (the phantom-vehicle lesson, 2026-07-08)."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if event is None:
-        return False
+        return (False, None)
+    image_path = event.image_path
+    vehicle_id = event.vehicle_id
     db.delete(event)
+    if vehicle_id is not None:
+        remaining = (db.query(Event)
+                       .filter(Event.vehicle_id == vehicle_id,
+                               Event.id != event_id)
+                       .all())
+        vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+        if vehicle is not None:
+            if not remaining:
+                db.delete(vehicle)
+            else:
+                vehicle.total_sightings = len(remaining)
+                vehicle.last_seen_at = max(e.timestamp for e in remaining)
     db.commit()
-    return True
+    return (True, image_path)
 
 
 def upsert_vehicle_for_plate(db, plate_text):

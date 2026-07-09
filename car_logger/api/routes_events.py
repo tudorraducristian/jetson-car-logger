@@ -1,5 +1,6 @@
 """/api/events endpoints — a thin HTTP layer over the repository."""
 
+import os
 from typing import List, Optional
 
 from fastapi import (APIRouter, Depends, HTTPException, Query, Request,
@@ -41,8 +42,14 @@ def get_event(event_id: int, db: Session = Depends(get_db)):
 def delete_event(event_id: int, request: Request,
                  db: Session = Depends(get_db)):
     """Delete an event: 204 on success, 404 if unknown."""
-    if not repositories.delete_event(db, event_id):
+    existed, image_path = repositories.delete_event(db, event_id)
+    if not existed:
         raise HTTPException(status_code=404, detail="Event not found")
+    if image_path:
+        try:
+            os.remove(image_path)
+        except OSError:
+            pass  # crop already gone; the DB row was the source of truth
     # A delete is a write like any other write: publish so every open
     # dashboard refreshes its feed AND stats via SSE. htmx ignores the 204
     # body, so the SSE round-trip is what removes the row from the page.
