@@ -57,7 +57,7 @@ class AnprWorker(object):
                     log.exception(
                         "ANPR client raised for event %s; marking it failed",
                         event_id)
-                    result = PlateResult(None, None, "failed")
+                    result = PlateResult(None, None, "failed", None)
                 try:
                     self._on_result(event_id, result, crop_bytes)
                 except Exception:

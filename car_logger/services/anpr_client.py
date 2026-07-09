@@ -17,9 +17,11 @@ from collections import namedtuple
 
 import httpx
 
+from car_logger.services.plate_rules import normalize_plate
+
 PlateResult = namedtuple(
-    "PlateResult", ["plate_text", "confidence", "status"]
-)  # status: success | failed | throttled
+    "PlateResult", ["plate_text", "confidence", "status", "region"]
+)  # status: success | failed | throttled | skipped
 
 
 class AnprClient(object):
@@ -53,21 +55,29 @@ class AnprClient(object):
                     attempt += 1
                     time.sleep(0.1 * (2 ** attempt))
                     continue
-                return PlateResult(None, None, "failed")
+                return PlateResult(None, None, "failed", None)
 
             if resp.status_code in (200, 201):
-                return self._parse(resp.json())
+                try:
+                    payload = resp.json()
+                except ValueError:
+                    # 200 with a non-JSON body (proxy error page…): the
+                    # contract says expected failures never raise.
+                    return PlateResult(None, None, "failed", None)
+                return self._parse(payload)
             if resp.status_code == 429:
-                return PlateResult(None, None, "throttled")
+                return PlateResult(None, None, "throttled", None)
             if 500 <= resp.status_code < 600 and attempt < self.max_retries:
                 attempt += 1
                 time.sleep(0.1 * (2 ** attempt))
                 continue
-            return PlateResult(None, None, "failed")
+            return PlateResult(None, None, "failed", None)
 
     def _parse(self, payload):
         results = payload.get("results", [])
         if not results:
-            return PlateResult(None, None, "failed")
+            return PlateResult(None, None, "failed", None)
         best = results[0]
-        return PlateResult(best.get("plate"), best.get("score"), "success")
+        region = (best.get("region") or {}).get("code")
+        return PlateResult(normalize_plate(best.get("plate")),
+                           best.get("score"), "success", region)
