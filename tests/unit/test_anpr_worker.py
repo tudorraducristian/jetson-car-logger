@@ -64,3 +64,25 @@ def test_worker_survives_callback_exception():
     assert _wait_for(lambda: len(seen) == 2), "thread died in the callback"
     worker.stop()
     assert seen == [1, 2]
+
+
+def test_stop_drains_pending_jobs_as_skipped_and_closes_client():
+    # codex finding 7: jobs queued at shutdown (daily 04:00 restart!) must
+    # not leave their events 'pending' forever.
+    calls = []
+
+    class ClosableClient(object):
+        def __init__(self):
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    client = ClosableClient()
+    worker = AnprWorker(
+        client, lambda eid, res, crop: calls.append((eid, res.status)))
+    worker.submit(1, b"a")
+    worker.submit(2, b"b")
+    worker.stop()  # never started: everything is still queued
+    assert calls == [(1, "skipped"), (2, "skipped")]
+    assert client.closed is True
