@@ -47,3 +47,11 @@ def test_delete_event(client):
 
 def test_delete_missing_event_is_404(client):
     assert client.delete("/api/events/9999").status_code == 404
+
+
+def test_event_region_roundtrip(client):
+    created = client.post(
+        "/api/events", json={"plate_text": "B123ABC", "region": "ro"}).json()
+    assert created["region"] == "ro"
+    resp = client.get("/api/events/" + str(created["id"]))
+    assert resp.json()["region"] == "ro"
