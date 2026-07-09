@@ -15,6 +15,7 @@ from car_logger.config import settings
 from car_logger.database import SessionLocal
 from car_logger.logging_config import configure_logging, get_logger
 from car_logger.services.broker import EventBroker
+from car_logger.services.plate_rules import should_create_vehicle
 from car_logger import repositories, schemas
 
 configure_logging(settings.log_level)
@@ -64,31 +65,45 @@ def _cleanup_old_crops(plates_dir=PLATES_DIR, max_age_days=CROP_RETENTION_DAYS):
 
 
 def _make_on_result(broker):
-    """Build the ANPR result callback: save crop, update event, upsert vehicle.
+    """Build the ANPR result callback: verify the event still exists, save
+    the crop, apply the identity gate, update the event.
 
-    Student amendment (2026-07-07): the crop is saved for EVERY outcome, not
-    only success — a failed read's image is the debugging evidence."""
+    Student amendment (2026-07-07): the crop is saved for EVERY outcome —
+    a failed read's image is the debugging evidence.
+    Review fix (codex, 2026-07-08): the event may have been DELETED from
+    the dashboard while the ANPR call was in flight; in that case do
+    nothing (especially: no vehicle, no crop file). A delete in the tiny
+    window between this check and the commit is accepted residual risk on
+    a single-user LAN appliance."""
     def on_result(event_id, plate_result, crop_bytes):
         db = SessionLocal()
         try:
+            if repositories.get_event(db, event_id) is None:
+                log.info("anpr_result_for_deleted_event", event_id=event_id)
+                return
             image_path = None
             if crop_bytes:
                 os.makedirs(PLATES_DIR, exist_ok=True)
                 image_path = os.path.join(PLATES_DIR, str(event_id) + ".jpg")
                 with open(image_path, "wb") as fh:
                     fh.write(crop_bytes)
-            if plate_result.status == "success" and plate_result.plate_text:
-                vehicle = repositories.upsert_vehicle_for_plate(
-                    db, plate_result.plate_text
-                )
+            if plate_result.status == "success":
+                vehicle_id = None
+                if should_create_vehicle(plate_result.plate_text,
+                                         plate_result.confidence,
+                                         plate_result.region,
+                                         settings.min_vehicle_confidence):
+                    vehicle = repositories.upsert_vehicle_for_plate(
+                        db, plate_result.plate_text)
+                    vehicle_id = vehicle.id
                 repositories.update_event_anpr(
                     db, event_id, plate_result.plate_text,
-                    plate_result.confidence, "success", image_path, vehicle.id,
-                )
+                    plate_result.confidence, "success", image_path,
+                    vehicle_id, region=plate_result.region)
             else:
                 repositories.update_event_anpr(
-                    db, event_id, None, None, plate_result.status, image_path,
-                )
+                    db, event_id, None, None, plate_result.status,
+                    image_path, region=plate_result.region)
             broker.publish("updated")
         finally:
             db.close()
@@ -141,6 +156,7 @@ def _startup():
                 )
             finally:
                 db2.close()
+            app.state.broker.publish("updated")
 
     pipeline = PipelineWorker(
         camera=camera,
