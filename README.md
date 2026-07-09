@@ -118,6 +118,7 @@ the repo). Fields and defaults:
 | `LOG_LEVEL`          | `INFO`                           | `DEBUG` for troubleshooting                |
 | `MAX_PIPELINE_FPS`   | `15`                             | Detection loop ceiling (thermal headroom)  |
 | `DETECTOR_THRESHOLD` | `0.5`                            | Min detection confidence                   |
+| `MIN_VEHICLE_CONFIDENCE` | `0.85`                       | Min OCR confidence to create a vehicle     |
 | `CAMERA_INDEX`       | `0`                              | `/dev/video*` index of the webcam          |
 | `ENABLE_PIPELINE`    | `true`                           | `false` = API/dashboard only, no camera    |
 

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     max_pipeline_fps: int = 15
     detector_threshold: float = 0.5
+    # identity gate: a plate reading below this confidence never creates a
+    # Vehicle (the event still keeps the reading). Student decision 2026-07-08.
+    min_vehicle_confidence: float = 0.85
     camera_index: int = 0
     enable_pipeline: bool = True
 
