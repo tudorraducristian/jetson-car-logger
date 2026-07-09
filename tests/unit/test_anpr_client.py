@@ -28,7 +28,7 @@ def test_200_returns_plate(monkeypatch):
     ])
     result = ac.read_plate(b"jpegbytes")
     assert result.status == "success"
-    assert result.plate_text == "b123xyz"
+    assert result.plate_text == "B123XYZ"
     assert abs(result.confidence - 0.92) < 1e-9
     assert calls["n"] == 1
 
@@ -42,7 +42,7 @@ def test_201_created_returns_plate(monkeypatch):
     ])
     result = ac.read_plate(b"jpegbytes")
     assert result.status == "success"
-    assert result.plate_text == "mmm8748"
+    assert result.plate_text == "MMM8748"
     assert calls["n"] == 1
 
 
@@ -76,7 +76,7 @@ def test_500_then_200_succeeds(monkeypatch):
     ])
     result = ac.read_plate(b"x")
     assert result.status == "success"
-    assert result.plate_text == "cj01aaa"
+    assert result.plate_text == "CJ01AAA"
     assert calls["n"] == 2
 
 
@@ -106,3 +106,35 @@ def test_network_down_returns_failed_not_raises(monkeypatch):
     result = ac.read_plate(b"x")  # must not raise
     assert result.status == "failed"
     assert calls["n"] == 3  # initial + 2 retries, same policy as timeouts
+
+
+def test_parse_extracts_region_and_normalizes(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    ac, _ = _client_returning([
+        (201, {"results": [{"plate": "el1 47ad", "score": 0.97,
+                            "region": {"code": "cz", "score": 0.8}}]}),
+    ])
+    result = ac.read_plate(b"jpegbytes")
+    assert result.plate_text == "EL147AD"
+    assert result.region == "cz"
+
+
+def test_parse_without_region_is_none(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+    ac, _ = _client_returning([
+        (200, {"results": [{"plate": "b123xyz", "score": 0.9}]}),
+    ])
+    assert ac.read_plate(b"x").region is None
+
+
+def test_success_status_with_invalid_json_is_failed(monkeypatch):
+    # codex finding 8: a 200 with an HTML body (proxy error page) must not
+    # raise out of read_plate — its contract says expected failures don't.
+    monkeypatch.setattr("time.sleep", lambda *_: None)
+
+    def handler(request):
+        return httpx.Response(200, text="<html>gateway error</html>")
+
+    http = httpx.Client(transport=httpx.MockTransport(handler))
+    ac = AnprClient("http://anpr.test", "tok", client=http)
+    assert ac.read_plate(b"x").status == "failed"
