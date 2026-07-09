@@ -55,3 +55,24 @@ def test_event_detail_empty_placeholder(client):
     response = client.get("/partials/event-detail")
     assert response.status_code == 200
     assert "Alege" in response.text
+
+
+def test_fresh_event_row_is_marked_new(client):
+    # created "now" -> inside the freshness window -> animated entrance
+    client.post("/api/events", json={"plate_text": "NEW111"})
+    resp = client.get("/partials/events-feed")
+    assert resp.status_code == 200
+    assert "row-new" in resp.text
+
+
+def test_old_event_row_is_not_marked_new(client, db_session):
+    from datetime import datetime, timedelta
+
+    from car_logger.models import Event
+
+    db_session.add(Event(timestamp=datetime.utcnow() - timedelta(minutes=5),
+                         anpr_status="pending"))
+    db_session.commit()
+    resp = client.get("/partials/events-feed")
+    assert resp.status_code == 200
+    assert "row-new" not in resp.text
