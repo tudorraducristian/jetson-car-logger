@@ -42,6 +42,30 @@
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-thumb { background: #2a2a32; border-radius: 4px; }
     ::selection { background: #d4a843; color: #0a0a0c; }
+
+    /* v1.1 "living dashboard" motion. Entrance animations replay whenever
+       htmx re-inserts a fragment; the reduced-motion rule below disables
+       everything for users who ask for no motion. */
+    @keyframes row-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes gold-flash {
+      from { box-shadow: inset 3px 0 0 #d4a843; }
+      to   { box-shadow: inset 3px 0 0 rgba(212, 168, 67, 0); }
+    }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .row-new { animation: row-in 300ms ease-out, gold-flash 2s ease-out forwards; }
+    .pop-in  { animation: pop-in 250ms ease-out; }
+    .fade-up { animation: fade-up 250ms ease-out; }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation: none !important;
