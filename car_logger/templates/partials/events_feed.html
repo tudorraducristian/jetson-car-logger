@@ -3,7 +3,7 @@
 {% if events %}
 <ul class="divide-y divide-ink-700 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
   {% for event in events %}
-  <li class="flex items-stretch">
+  <li class="flex items-stretch{{ ' row-new' if event.timestamp > fresh_cutoff else '' }}">
     <button type="button"
             hx-get="/partials/event/{{ event.id }}"
             hx-target="#event-detail"

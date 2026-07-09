@@ -7,7 +7,7 @@ fragments — only the presentation differs.
 """
 
 import os
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
@@ -35,6 +35,9 @@ def localtime(dt):
 
 templates.env.filters["localtime"] = localtime
 
+# Rows younger than this get the animated "new" entrance in the feed.
+FRESH_ROW_SECONDS = 10
+
 router = APIRouter(tags=["dashboard"], include_in_schema=False)
 
 
@@ -48,9 +51,10 @@ def dashboard(request: Request):
 def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
     """Feed fragment, newest first; `q` filters by plate substring."""
     events = repositories.list_events(db, limit=15, plate_text=(q or None))
+    fresh_cutoff = datetime.utcnow() - timedelta(seconds=FRESH_ROW_SECONDS)
     return templates.TemplateResponse(
         "partials/events_feed.html",
-        {"request": request, "events": events})
+        {"request": request, "events": events, "fresh_cutoff": fresh_cutoff})
 
 
 @router.get("/partials/vehicles-list")
