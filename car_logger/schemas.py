@@ -15,6 +15,7 @@ from pydantic import BaseModel
 class EventCreate(BaseModel):
     plate_text: Optional[str] = None
     plate_confidence: Optional[float] = None
+    region: Optional[str] = None
     anpr_status: str = "pending"
     bbox_json: Optional[str] = None
     image_path: Optional[str] = None
@@ -28,6 +29,7 @@ class EventRead(BaseModel):
     vehicle_id: Optional[int]
     plate_text: Optional[str]
     plate_confidence: Optional[float]
+    region: Optional[str]
     anpr_status: str
     bbox_json: Optional[str]
     image_path: Optional[str]

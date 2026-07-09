@@ -44,7 +44,7 @@ def list_events(db: Session, skip: int = 0, limit: int = 50,
 
 
 def update_event_anpr(db, event_id, plate_text, confidence, status,
-                      image_path, vehicle_id=None):
+                      image_path, vehicle_id=None, region=None):
     """Fill in ANPR results on an existing event. Returns the event or None."""
     event = db.query(Event).filter(Event.id == event_id).first()
     if event is None:
@@ -53,6 +53,7 @@ def update_event_anpr(db, event_id, plate_text, confidence, status,
     event.plate_confidence = confidence
     event.anpr_status = status
     event.image_path = image_path
+    event.region = region
     if vehicle_id is not None:
         event.vehicle_id = vehicle_id
     db.commit()

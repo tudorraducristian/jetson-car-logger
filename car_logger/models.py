@@ -38,6 +38,9 @@ class Event(Base):
     # plate_text is denormalized onto the event for fast listing/filtering.
     plate_text = Column(String, nullable=True, index=True)
     plate_confidence = Column(Float, nullable=True)
+    # region code the ANPR API detected for the plate ("ro", "cz"…) — used
+    # by the identity gate and shown in the detail drawer.
+    region = Column(String, nullable=True)
     # anpr_status: pending | success | failed | skipped | throttled
     anpr_status = Column(String, nullable=False, default="pending")
     bbox_json = Column(Text, nullable=True)

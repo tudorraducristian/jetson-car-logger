@@ -44,6 +44,10 @@
       <dd class="mt-1 font-mono text-paper">{{ event.track_id if event.track_id is not none else '—' }}</dd>
     </div>
     <div>
+      <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Regiune</dt>
+      <dd class="mt-1 font-mono text-paper">{{ event.region.upper() if event.region else '—' }}</dd>
+    </div>
+    <div>
       <dt class="font-mono text-[11px] uppercase tracking-widest text-paper-faint">Bbox</dt>
       <dd class="mt-1 break-all font-mono text-xs text-paper-dim">{{ event.bbox_json or '—' }}</dd>
     </div>
