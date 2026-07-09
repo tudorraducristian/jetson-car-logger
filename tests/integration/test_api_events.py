@@ -55,3 +55,36 @@ def test_event_region_roundtrip(client):
     assert created["region"] == "ro"
     resp = client.get("/api/events/" + str(created["id"]))
     assert resp.json()["region"] == "ro"
+
+
+def test_delete_last_event_removes_vehicle(client, db_session):
+    from datetime import datetime
+
+    from car_logger.models import Vehicle
+
+    vehicle = Vehicle(plate_text="GONE123", first_seen_at=datetime.utcnow(),
+                      last_seen_at=datetime.utcnow(), total_sightings=1)
+    db_session.add(vehicle)
+    db_session.commit()
+    created = client.post("/api/events", json={
+        "plate_text": "GONE123", "vehicle_id": vehicle.id}).json()
+    assert client.delete("/api/events/" + str(created["id"])).status_code == 204
+    assert db_session.query(Vehicle).count() == 0
+
+
+def test_delete_one_of_two_recomputes_sightings(client, db_session):
+    from datetime import datetime
+
+    from car_logger.models import Vehicle
+
+    vehicle = Vehicle(plate_text="STAY123", first_seen_at=datetime.utcnow(),
+                      last_seen_at=datetime.utcnow(), total_sightings=2)
+    db_session.add(vehicle)
+    db_session.commit()
+    first = client.post("/api/events", json={
+        "plate_text": "STAY123", "vehicle_id": vehicle.id}).json()
+    client.post("/api/events", json={
+        "plate_text": "STAY123", "vehicle_id": vehicle.id})
+    assert client.delete("/api/events/" + str(first["id"])).status_code == 204
+    db_session.refresh(vehicle)
+    assert vehicle.total_sightings == 1
