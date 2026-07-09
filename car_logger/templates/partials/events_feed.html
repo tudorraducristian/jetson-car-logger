@@ -8,7 +8,7 @@
             hx-get="/partials/event/{{ event.id }}"
             hx-target="#event-detail"
             hx-swap="innerHTML"
-            class="flex min-w-0 flex-1 cursor-pointer items-center gap-4 px-4 py-3 text-left transition-colors duration-150 hover:bg-ink-850 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
+            class="flex min-w-0 flex-1 cursor-pointer items-center gap-4 px-4 py-3 text-left transition duration-150 hover:translate-x-0.5 hover:bg-ink-850 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold">
       {% if event.image_path %}
       <img src="/data/plates/{{ event.id }}.jpg" alt="Crop eveniment {{ event.id }}"
            width="56" height="42" loading="lazy"
