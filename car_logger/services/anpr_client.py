@@ -35,6 +35,10 @@ class AnprClient(object):
             timeout=timeout
         )
 
+    def close(self):
+        """Release the HTTP connection pool (called from worker shutdown)."""
+        self._client.close()
+
     def read_plate(self, image_bytes):
         """POST the image to Plate Recognizer; return a PlateResult.
 

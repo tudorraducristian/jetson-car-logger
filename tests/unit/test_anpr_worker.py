@@ -28,6 +28,9 @@ class FlakyClient(object):
             raise RuntimeError("boom")
         return ("OK", 0.9, "success")
 
+    def close(self):
+        pass
+
 
 def test_worker_survives_client_exception():
     got = []
@@ -47,6 +50,9 @@ def test_worker_survives_client_exception():
 class OkClient(object):
     def read_plate(self, crop_bytes):
         return ("OK", 0.9, "success")
+
+    def close(self):
+        pass
 
 
 def test_worker_survives_callback_exception():

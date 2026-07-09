@@ -70,3 +70,18 @@ class AnprWorker(object):
         self._running = False
         if self._thread is not None:
             self._thread.join(timeout=2.0)
+        # Daily-restart reality: jobs still queued at shutdown would leave
+        # their events 'pending' forever. Mark them skipped instead.
+        while True:
+            try:
+                event_id, crop_bytes = self._queue.get_nowait()
+            except queue.Empty:
+                break
+            try:
+                self._on_result(
+                    event_id, PlateResult(None, None, "skipped", None),
+                    crop_bytes)
+            except Exception:
+                log.exception("drain: on_result raised for event %s",
+                              event_id)
+        self._client.close()
