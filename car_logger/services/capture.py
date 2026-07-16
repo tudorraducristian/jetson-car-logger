@@ -13,6 +13,10 @@ factory so this module imports without OpenCV (e.g. off-Jetson)."""
 import threading
 import time
 
+from car_logger.logging_config import get_logger
+
+log = get_logger("car_logger.capture")
+
 
 def _default_open_capture(device_index):
     import cv2
@@ -55,3 +59,28 @@ class CameraWorker(object):
                     or self._seconds_since_frame() > self._stale_after_s):
                 return None
             return self._frame.copy()
+
+    def _run_once(self):
+        """One capture iteration: (re)open if needed, read once, store a
+        fresh frame, or declare the camera lost after stale_after_s. Returns
+        True only when a fresh frame was stored. Sleeps nowhere, so the
+        read/reconnect logic is unit-testable without threads."""
+        if self._cap is None or not self._cap.isOpened():
+            self._cap = self._open_capture(self.device_index)
+            return False
+        ok, frame = self._cap.read()
+        if ok:
+            with self._lock:
+                self._frame = frame
+                self._last_frame_at = self._now()
+            if self._lost:
+                log.info("camera_reconnected", device_index=self.device_index)
+                self._lost = False
+            return True
+        if self._seconds_since_frame() > self._stale_after_s:
+            if not self._lost:
+                log.warning("camera_lost", device_index=self.device_index)
+                self._lost = True
+            self._cap.release()
+            self._cap = None
+        return False
