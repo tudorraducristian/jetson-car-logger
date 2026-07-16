@@ -124,3 +124,21 @@ def test_reopen_that_stays_closed_does_not_crash():
     assert w._run_once() is False         # opens a not-opened capture
     assert w._run_once() is False         # sees it closed, reopens again
     assert w.is_healthy() is False        # never raises
+
+
+import time as _time
+
+
+def test_loop_captures_live_frames_and_stops_cleanly():
+    frame = np.zeros((4, 4), np.uint8)
+    cap = FakeCapture(frame)
+    w = CameraWorker(open_capture=lambda i: cap, now=_time.monotonic,
+                     stale_after_s=2.0, reopen_backoff_s=0.05)
+    w.start()
+    deadline = _time.monotonic() + 1.0
+    while _time.monotonic() < deadline and not w.is_healthy():
+        _time.sleep(0.01)
+    assert w.is_healthy() is True
+    assert np.array_equal(w.get_latest_frame(), frame)
+    w.stop()
+    assert w._running is False
