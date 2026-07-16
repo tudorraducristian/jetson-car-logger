@@ -120,6 +120,8 @@ the repo). Fields and defaults:
 | `DETECTOR_THRESHOLD` | `0.5`                            | Min detection confidence                   |
 | `MIN_VEHICLE_CONFIDENCE` | `0.85`                       | Min OCR confidence to create a vehicle     |
 | `CAMERA_INDEX`       | `0`                              | `/dev/video*` index of the webcam          |
+| `CAMERA_STALE_AFTER_S` | `2.0`                          | Seconds with no fresh frame before the camera is declared lost and reopened |
+| `CAMERA_REOPEN_BACKOFF_S` | `2.0`                       | Seconds between reopen attempts while the camera is gone |
 | `ENABLE_PIPELINE`    | `true`                           | `false` = API/dashboard only, no camera    |
 
 ## Development vs production

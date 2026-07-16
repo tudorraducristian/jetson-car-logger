@@ -125,7 +125,11 @@ def _startup():
     from car_logger.services.anpr_worker import AnprWorker
     from car_logger.services.cropping import crop_to_jpeg
 
-    camera = CameraWorker(device_index=settings.camera_index)
+    camera = CameraWorker(
+        device_index=settings.camera_index,
+        stale_after_s=settings.camera_stale_after_s,
+        reopen_backoff_s=settings.camera_reopen_backoff_s,
+    )
     camera.start()
 
     anpr_client = AnprClient(settings.anpr_api_url, settings.anpr_api_key)

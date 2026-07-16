@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     # Vehicle (the event still keeps the reading). Student decision 2026-07-08.
     min_vehicle_confidence: float = 0.85
     camera_index: int = 0
+    # camera self-healing (student decision 2026-07-15): no fresh frame for
+    # this long => camera lost => camera_ok False + reopen. Reopen retries
+    # this often until the device returns.
+    camera_stale_after_s: float = 2.0
+    camera_reopen_backoff_s: float = 2.0
     enable_pipeline: bool = True
 
     class Config:
