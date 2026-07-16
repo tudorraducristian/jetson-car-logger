@@ -84,3 +84,26 @@ class CameraWorker(object):
             self._cap.release()
             self._cap = None
         return False
+
+    def start(self):
+        self._running = True
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def _loop(self):
+        # A transient read failure must never kill the appliance's only CV
+        # feed. _run_once owns the reopen; here we only pace the loop.
+        while self._running:
+            if self._run_once():
+                continue  # read() blocks, so no sleep needed on success
+            if self._cap is None or not self._cap.isOpened():
+                time.sleep(self._reopen_backoff_s)
+            else:
+                time.sleep(0.01)  # brief, avoids a busy-spin before loss
+
+    def stop(self):
+        self._running = False
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+        if self._cap is not None:
+            self._cap.release()
