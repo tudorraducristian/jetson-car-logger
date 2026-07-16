@@ -60,12 +60,26 @@ class CameraWorker(object):
                 return None
             return self._frame.copy()
 
+    def _declare_lost_once(self):
+        if not self._lost:
+            log.warning("camera_lost", device_index=self.device_index)
+            self._lost = True
+
     def _run_once(self):
         """One capture iteration: (re)open if needed, read once, store a
         fresh frame, or declare the camera lost after stale_after_s. Returns
         True only when a fresh frame was stored. Sleeps nowhere, so the
         read/reconnect logic is unit-testable without threads."""
         if self._cap is None or not self._cap.isOpened():
+            # A real unplug closes the handle (GStreamer flips isOpened to
+            # False) instead of failing read() - Task 6 live finding. Loss
+            # must be declared on this path too, but only if a frame ever
+            # arrived, so a boot without a camera stays quiet.
+            if self._cap is not None:
+                self._cap.release()
+            if (self._last_frame_at is not None
+                    and self._seconds_since_frame() > self._stale_after_s):
+                self._declare_lost_once()
             self._cap = self._open_capture(self.device_index)
             return False
         ok, frame = self._cap.read()
@@ -78,9 +92,7 @@ class CameraWorker(object):
                 self._lost = False
             return True
         if self._seconds_since_frame() > self._stale_after_s:
-            if not self._lost:
-                log.warning("camera_lost", device_index=self.device_index)
-                self._lost = True
+            self._declare_lost_once()
             self._cap.release()
             self._cap = None
         return False
