@@ -14,3 +14,9 @@ def test_env_var_overrides_default(monkeypatch):
     s = Settings()
     assert s.max_pipeline_fps == 8
     assert s.anpr_api_key == "test-token"
+
+
+def test_camera_healing_settings_have_defaults():
+    s = Settings()
+    assert s.camera_stale_after_s == 2.0
+    assert s.camera_reopen_backoff_s == 2.0
