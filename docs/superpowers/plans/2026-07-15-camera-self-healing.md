@@ -50,7 +50,7 @@ Rewrites `capture.py` down to an importable class with the full constructor and 
   - `CameraWorker._seconds_since_frame() -> float`
   - State fields: `_cap`, `_frame`, `_last_frame_at`, `_lost`, `_lock`, `_running`, `_thread`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/unit/test_capture.py`:
 
@@ -100,12 +100,12 @@ def test_no_frame_yet_is_unhealthy():
     assert w.get_latest_frame() is None
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest tests/unit/test_capture.py -v`
 Expected: FAIL — `ImportError`/`AttributeError` (the new constructor signature and `is_healthy` don't exist yet).
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 Replace the entire contents of `car_logger/services/capture.py` with:
 
@@ -169,12 +169,12 @@ class CameraWorker(object):
             return self._frame.copy()
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest tests/unit/test_capture.py -v`
 Expected: PASS (3 passed).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/capture.py tests/unit/test_capture.py
@@ -195,7 +195,7 @@ Adds the sleepless per-iteration method that reads, stores a fresh frame, and de
 - Consumes: everything from Task 1.
 - Produces: `CameraWorker._run_once() -> bool` — returns `True` only when a fresh frame was stored this call; opens `self._cap` via the factory when missing/closed; on a read failure older than `stale_after_s` it logs `camera_lost` once, releases and drops `self._cap`; on the first success after a loss it logs `camera_reconnected` and clears the lost flag. Never sleeps.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/unit/test_capture.py`:
 
@@ -283,12 +283,12 @@ def test_reopen_that_stays_closed_does_not_crash():
     assert w.is_healthy() is False        # never raises
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest tests/unit/test_capture.py -v`
 Expected: FAIL — `AttributeError: 'CameraWorker' object has no attribute '_run_once'`.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 At the top of `car_logger/services/capture.py`, add the logger import below `import time`:
 
@@ -327,12 +327,12 @@ Add this method to `CameraWorker` (after `get_latest_frame`):
         return False
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest tests/unit/test_capture.py -v`
 Expected: PASS (8 passed total).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/capture.py tests/unit/test_capture.py
@@ -353,7 +353,7 @@ Wraps `_run_once` in the daemon thread with the backoff sleeps and clean start/s
 - Consumes: `_run_once` from Task 2.
 - Produces: `CameraWorker.start()`, `CameraWorker.stop()`, `CameraWorker._loop()`. Contract unchanged from callers' view (`start` then `get_latest_frame`/`is_healthy`, `stop` on shutdown).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/unit/test_capture.py`:
 
@@ -376,12 +376,12 @@ def test_loop_captures_live_frames_and_stops_cleanly():
     assert w._running is False
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest tests/unit/test_capture.py::test_loop_captures_live_frames_and_stops_cleanly -v`
 Expected: FAIL — `AttributeError: 'CameraWorker' object has no attribute 'start'` (Task 1 removed the old start/stop).
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 Add these three methods to `CameraWorker` (after `_run_once`):
 
@@ -410,12 +410,12 @@ Add these three methods to `CameraWorker` (after `_run_once`):
             self._cap.release()
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest tests/unit/test_capture.py -v`
 Expected: PASS (9 passed total).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/capture.py tests/unit/test_capture.py
@@ -436,7 +436,7 @@ git commit -m "feat(camera): daemon loop over _run_once with backoff; start no l
 - Consumes: `CameraWorker.is_healthy()`.
 - Produces: `/api/status` JSON with a truthful `camera_ok`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/integration/test_api_status.py`:
 
@@ -470,12 +470,12 @@ def test_camera_ok_reflects_health():
     assert client.get("/api/status").json()["camera_ok"] is False
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest tests/integration/test_api_status.py -v`
 Expected: FAIL — `AttributeError: 'FakeCam' object has no attribute 'get_latest_frame'` (the route still calls the old method).
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 In `car_logger/api/routes_status.py`, change the `camera_ok` line inside the non-None-pipeline return (line ~25):
 
@@ -483,12 +483,12 @@ In `car_logger/api/routes_status.py`, change the `camera_ok` line inside the non
         "camera_ok": camera is not None and camera.is_healthy(),
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pytest tests/integration/test_api_status.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/api/routes_status.py tests/integration/test_api_status.py
@@ -511,7 +511,7 @@ Expose the two knobs in settings, pass them to the worker, and document them.
 - Consumes: `CameraWorker(...)` full signature from Task 1.
 - Produces: `settings.camera_stale_after_s: float`, `settings.camera_reopen_backoff_s: float`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/unit/test_config.py`:
 
@@ -525,12 +525,12 @@ def test_camera_healing_settings_have_defaults():
     assert s.camera_reopen_backoff_s == 2.0
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest tests/unit/test_config.py -v`
 Expected: FAIL — `AttributeError`/validation: fields don't exist yet.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [x] **Step 3: Write the minimal implementation**
 
 In `car_logger/config.py`, add two fields after `camera_index`:
 
@@ -570,12 +570,12 @@ In `README.md`, add two rows to the configuration table (match the existing colu
 | `CAMERA_REOPEN_BACKOFF_S` | 2.0 | Seconds between reopen attempts while the camera is gone. |
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pytest tests/unit/test_config.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/config.py car_logger/main.py .env.example README.md tests/unit/test_config.py
