@@ -126,6 +126,33 @@ def test_reopen_that_stays_closed_does_not_crash():
     assert w.is_healthy() is False        # never raises
 
 
+def test_dead_handle_after_threshold_is_declared_lost():
+    """Live-found on the Jetson (2026-07-16): a real unplug makes GStreamer
+    flip isOpened() to False instead of failing read(), which skipped the
+    loss declaration entirely - healing worked but nothing was logged."""
+    clock = FakeClock(100.0)
+    live = FakeCapture(np.zeros((4, 4), np.uint8))
+    w = _worker(clock, open_capture=lambda i: live)
+    w._run_once(); w._run_once()          # open + one good read
+    live._opened = False                  # unplug: the handle reports closed
+    clock.advance(3.0)                    # past the 2s threshold
+    assert w._run_once() is False         # takes the reopen branch
+    assert w._lost is True                # loss is declared there too
+    assert live.released is True          # the dead pipeline was released
+
+
+def test_dead_handle_under_threshold_reopens_without_declaring_loss():
+    clock = FakeClock(100.0)
+    live = FakeCapture(np.zeros((4, 4), np.uint8))
+    caps = [live, FakeCapture(np.ones((4, 4), np.uint8))]
+    w = _worker(clock, open_capture=lambda i: caps.pop(0))
+    w._run_once(); w._run_once()          # open + one good read
+    live._opened = False                  # dies instantly, frame still fresh
+    assert w._run_once() is False         # reopens right away
+    assert w._lost is False               # too fresh to call it a loss
+    assert w.is_healthy() is True
+
+
 import time as _time
 
 
