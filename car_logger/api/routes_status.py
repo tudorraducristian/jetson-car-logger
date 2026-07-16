@@ -22,6 +22,6 @@ def status(request: Request):
         "pipeline_running": True,
         "fps": round(pipeline.last_fps, 1),
         "frames_processed": pipeline.frames_processed,
-        "camera_ok": camera is not None and camera.get_latest_frame() is not None,
+        "camera_ok": camera is not None and camera.is_healthy(),
         "last_event_at": pipeline.last_event_at,
     }
