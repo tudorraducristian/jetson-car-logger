@@ -77,8 +77,7 @@ def stats(request: Request, db: Session = Depends(get_db)):
         "stats": repositories.event_stats(db),
         "pipeline_running": pipeline is not None,
         "fps": round(pipeline.last_fps, 1) if pipeline is not None else 0.0,
-        "camera_ok": (camera is not None
-                      and camera.get_latest_frame() is not None),
+        "camera_ok": camera is not None and camera.is_healthy(),
         "anpr_queue": anpr_worker.pending() if anpr_worker is not None else 0,
     })
 
