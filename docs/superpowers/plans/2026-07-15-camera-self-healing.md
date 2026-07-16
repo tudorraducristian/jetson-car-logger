@@ -590,7 +590,7 @@ Not code. Disable USB autosuspend (the drop's root cause) and prove end-to-end t
 
 **Files:** none (device config + live checkpoint).
 
-- [ ] **Step 1: Disable USB autosuspend (persistent)**
+- [x] **Step 1: Disable USB autosuspend (persistent)** — done 2026-07-16; `cat /sys/module/usbcore/parameters/autosuspend` → `-1` after reboot (nano had to be apt-installed first).
 
 ```bash
 sudo cp /boot/extlinux/extlinux.conf /boot/extlinux/extlinux.conf.bak
@@ -602,7 +602,7 @@ After reboot verify:
 cat /sys/module/usbcore/parameters/autosuspend    # expect: -1
 ```
 
-- [ ] **Step 2: Deploy the code and run the full suite**
+- [x] **Step 2: Deploy the code and run the full suite** — **91 passed**. Deviation: bare `pytest` died collecting `experiments/` (needs openpyxl) + a stray nested clone `~/jetson-car-logger/jetson-car-logger/` on the Jetson; fixed durably with `pytest.ini` `testpaths = tests` (`8fca0ca`). The nested clone still needs manual deletion (student's call).
 
 ```bash
 cd ~/jetson-car-logger && git pull
@@ -610,7 +610,7 @@ source venv/bin/activate && pytest -q      # expect: all green (existing + new)
 sudo systemctl restart car-logger
 ```
 
-- [ ] **Step 3: Confirm the chain works (baseline)**
+- [x] **Step 3: Confirm the chain works (baseline)** — `camera_ok: true`, fps 18.3-18.4, `frames_processed` climbing (389 → 2250 across checks).
 
 Point a real car at the camera; on the dashboard (`http://<jetson-ip>:8000`) a new event appears. `curl`-free check over the running service:
 ```bash
@@ -618,7 +618,7 @@ python3 -c "import urllib.request,json; print(json.load(urllib.request.urlopen('
 ```
 Expect `camera_ok: true`, `frames_processed` climbing.
 
-- [ ] **Step 4: Prove self-healing (the real test)**
+- [x] **Step 4: Prove self-healing (the real test)** — proven 2026-07-16, second run. **Live finding on the first run:** healing worked (reopen every ~2s, recovery on replug) but `camera_lost`/`camera_reconnected` never logged — a real unplug makes GStreamer flip `isOpened()` to False instead of failing `read()`, so the loss-declaring branch never ran. Fixed RED→GREEN (test `409eeef`, fix `7ee34cd`): loss is declared on the closed-handle path too, gated on ever having seen a frame. Second run journal: `camera_lost` once at 15:24:45, reopen attempts every ~2s, `camera_reconnected` once at 15:24:56; `camera_ok` false→true; frames resumed — **no manual restart**.
 
 Unplug the webcam USB for ~5s, watch the journal, then replug — WITHOUT restarting the service:
 ```bash
@@ -626,7 +626,7 @@ journalctl -u car-logger -f
 ```
 Expect: `camera_lost` logged once when unplugged; `/api/status` `camera_ok` flips to `false` and `frames_processed` stops climbing; on replug, `camera_reconnected` logged once, `camera_ok` back to `true`, frames resume — no manual restart.
 
-- [ ] **Step 5: Record the result**
+- [x] **Step 5: Record the result** — this file + [[car-logger-progress]] updated 2026-07-16; camera repair DONE. Extra (in-spirit deviation): dashboard stats partial also switched to `is_healthy()` (`7c78b94`) — same boolean, no needless frame copy.
 
 Tick the checkboxes in this plan with the observed outcome (journal lines, the camera_ok False→True transition). Update [[car-logger-progress]] to mark the camera repair DONE.
 
