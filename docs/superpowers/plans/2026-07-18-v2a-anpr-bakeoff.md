@@ -10,13 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-18-v2-local-anpr-design.md` (approved 2026-07-18).
 
-## Execution log (updated 2026-07-18 — RESUME AT TASK 7)
+## Execution log (updated 2026-07-18 — RESUME AT TASK 8)
 
 - **Task 1 ✅** `bd4fda1` — metrics TDD 6/6; `.venv` (py 3.14) created at repo root; collect-only isolation proven.
 - **Task 2 ✅** `2305f02` — datasets TDD 6/6.
 - **Task 3 ✅** `faad918` — evaluator TDD 4/4.
 - **Task 4 ✅** `881ffd5` — converter TDD 2/2; sparse clone done; `data/eu_benchmark` = **108 labeled** (loader-validated).
 - **Task 5 ✅** `3c2692b` — exporter TDD 1/1; Jetson: **91 passed** (app suite untouched) + `real_crops: 9 labeled images`; scp'd back, loader-validated 9. Only 3 unique plates: MMM8748 ×4 + EL147AD ×2 are *photos shown to the camera*; CJ45ARL ×3 (Dacia) is the only true camera capture. **Plateless triage: student confirmed NONE qualify** — labels.csv unchanged, FP rate will read n/a.
+- **Task 7 ✅** `e09dc5e` — fast-alpr 0.4.0 installed fine on py 3.14 (onnxruntime 1.27). **API deviation found by the repr check:** `ocr.confidence` is a per-character LIST, not a scalar → added `_mean_confidence` (mean, same convention as fast-alpr's own draw code) + a third test — harness total is now **24**, Task 10 Step 4 updated from 23. Runs (wall avg, laptop, indicative): eu_benchmark 119 ms (eu) / 76 ms (global); real_crops 174 ms (eu) / 64 ms (global). Preview before official scoring: fastalpr reads all 3 real Dacia crops (CJ45ARL) that OpenALPR missed; `global` variant reads 9/9 plausibly, `eu` variant misreads event_13.
 - **Task 6 ✅** `fe94524` (runner TDD 2/2) + `fa36963` (CSVs) — Jetson env fixes: apt `openalpr` ships **without `leu.traineddata`** → fetched from upstream `openalpr/openalpr` `runtime_data/ocr/tessdata/leu.traineddata` into `/usr/share/openalpr/runtime_data/ocr/`; GNU `time` needed `apt-get install time`. Measured (eu_benchmark, 108): **wall avg 1092 ms**, model-only 206 ms, **peak RSS 128528 KB ≈ 126 MB** (budgets < 2 s / < 500 MB: OK). real_crops (9): wall avg 951 ms, read **4/9** (BMW only, conf 0.9291), **0/3 on the real Dacia crops**, 1 alpr crash (event_15, empty stderr) recorded as no-read. Both datasets live on the Jetson too (scp trap: copying into an existing dir nests it — was fixed).
 - Jetson IP at time of writing: `192.168.0.188` (DHCP — rediscover via `arp -a`, MAC `00-04-4b`).
 - Session convention: **one task per turn, written summary after each, wait for OK** before the next.
@@ -1085,7 +1086,7 @@ git commit -m "data(bakeoff): OpenALPR eu predictions on both datasets (Jetson r
 - Consumes: `fast_alpr.ALPR(detector_model=…, ocr_model=…)`, `.predict(path)` → list of results with `.ocr.text` / `.ocr.confidence` (verified API surface 2026-07-18); `datasets.write_predictions`.
 - Produces: `predictions/fastalpr_eu__<dataset>.csv` and `predictions/fastalpr_global__<dataset>.csv` for both datasets. OCR variants (verified names from the fast-plate-ocr model hub): `european-plates-mobile-vit-v2-model`, `cct-xs-v2-global-model`; detector: `yolo-v9-t-384-license-plate-end2end`. Models cache under `~/.cache/fast-plate-ocr/` (OCR) — the spike (Task 9) scp's the cached `.onnx`+config files to the Jetson.
 
-- [ ] **Step 1: Install fast-alpr in the laptop venv**
+- [x] **Step 1: Install fast-alpr in the laptop venv**
 
 ```powershell
 .venv\Scripts\python -m pip install "fast-alpr[onnx]"
@@ -1093,7 +1094,7 @@ git commit -m "data(bakeoff): OpenALPR eu predictions on both datasets (Jetson r
 
 Expected: installs cleanly on Python 3.14 (pulls onnxruntime CPU + opencv). If the resolver refuses 3.14, per Global Constraints: install Python 3.12, recreate `.venv` with `py -3.12`, reinstall pytest + fast-alpr, rerun the harness tests (they are interpreter-agnostic).
 
-- [ ] **Step 2: API verification on one image (before writing the batch loop around it)**
+- [x] **Step 2: API verification on one image (before writing the batch loop around it)**
 
 ```powershell
 .venv\Scripts\python -c "from fast_alpr import ALPR; a = ALPR(detector_model='yolo-v9-t-384-license-plate-end2end', ocr_model='european-plates-mobile-vit-v2-model'); r = a.predict('experiments/anpr_bakeoff/data/eu_benchmark/images/eu1.jpg'); print(repr(r))"
@@ -1101,7 +1102,7 @@ Expected: installs cleanly on Python 3.14 (pulls onnxruntime CPU + opencv). If t
 
 Expected: a list with one result whose OCR text resembles `M5XSX`; note the exact attribute names in the printed repr. If they differ from `.ocr.text`/`.ocr.confidence`, adjust `_best` and its test below to the observed names before the batch run — this repr is the contract check.
 
-- [ ] **Step 3: Write the failing test**
+- [x] **Step 3: Write the failing test**
 
 `experiments/anpr_bakeoff/test_run_fastalpr.py`:
 
@@ -1128,12 +1129,12 @@ def test_best_picks_highest_ocr_confidence():
     assert _best([b, a]) is a
 ```
 
-- [ ] **Step 4: Run test to verify it fails**
+- [x] **Step 4: Run test to verify it fails**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_run_fastalpr.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'run_fastalpr'`
 
-- [ ] **Step 5: Write the runner**
+- [x] **Step 5: Write the runner**
 
 `experiments/anpr_bakeoff/run_fastalpr.py`:
 
@@ -1202,12 +1203,12 @@ if __name__ == "__main__":
     run(args.dataset, args.ocr, args.out)
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_run_fastalpr.py -v`
 Expected: 2 passed
 
-- [ ] **Step 7: Run all four combinations**
+- [x] **Step 7: Run all four combinations**
 
 ```powershell
 .venv\Scripts\python experiments/anpr_bakeoff/run_fastalpr.py --dataset experiments/anpr_bakeoff/data/eu_benchmark --ocr european-plates-mobile-vit-v2-model --out experiments/anpr_bakeoff/predictions/fastalpr_eu__eu_benchmark.csv
@@ -1218,7 +1219,7 @@ Expected: 2 passed
 
 Expected: four CSVs, each printing its image count + laptop wall average.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff/run_fastalpr.py experiments/anpr_bakeoff/test_run_fastalpr.py experiments/anpr_bakeoff/predictions/fastalpr_*.csv
@@ -1510,8 +1511,9 @@ In `experiments/anpr_bakeoff/README.md`, replace the line `Verdict: see RESULTS.
 - [ ] **Step 4: Run the full harness test suite one last time**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff -v`
-Expected: **23 passed** (6 metrics + 6 datasets + 4 evaluate + 2 convert +
-1 export + 2 openalpr + 2 fastalpr). The app suite needs no rerun: Stage A
+Expected: **24 passed** (6 metrics + 6 datasets + 4 evaluate + 2 convert +
+1 export + 2 openalpr + 3 fastalpr — the third covers the `_mean_confidence`
+list-reduction found by the Task 7 repr check). The app suite needs no rerun: Stage A
 never touched app code, and the Jetson confirmed "91 passed" at the Task 5
 checkpoint after the harness landed.
 
