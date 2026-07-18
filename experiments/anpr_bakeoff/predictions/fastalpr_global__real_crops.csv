@@ -1,0 +1,10 @@
+filename,plate_text,confidence,latency_ms
+images/event_5.jpg,MMM8748,0.9998,67.1
+images/event_7.jpg,MMM8748,0.9998,74.5
+images/event_11.jpg,MMM8748,0.9998,47.2
+images/event_12.jpg,MMM8748,0.9998,47.8
+images/event_13.jpg,EL147AD,0.9103,61.2
+images/event_15.jpg,EL147AD,0.9918,67.6
+images/event_22.jpg,CJ45ARL,0.9999,87.4
+images/event_29.jpg,CJ45ARL,0.9997,20.8
+images/event_35.jpg,CJ45ARL,0.9999,104.2
