@@ -10,13 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-18-v2-local-anpr-design.md` (approved 2026-07-18).
 
-## Execution log (updated 2026-07-18 — RESUME AT TASK 8)
+## Execution log (updated 2026-07-18 — RESUME AT TASK 9)
 
 - **Task 1 ✅** `bd4fda1` — metrics TDD 6/6; `.venv` (py 3.14) created at repo root; collect-only isolation proven.
 - **Task 2 ✅** `2305f02` — datasets TDD 6/6.
 - **Task 3 ✅** `faad918` — evaluator TDD 4/4.
 - **Task 4 ✅** `881ffd5` — converter TDD 2/2; sparse clone done; `data/eu_benchmark` = **108 labeled** (loader-validated).
 - **Task 5 ✅** `3c2692b` — exporter TDD 1/1; Jetson: **91 passed** (app suite untouched) + `real_crops: 9 labeled images`; scp'd back, loader-validated 9. Only 3 unique plates: MMM8748 ×4 + EL147AD ×2 are *photos shown to the camera*; CJ45ARL ×3 (Dacia) is the only true camera capture. **Plateless triage: student confirmed NONE qualify** — labels.csv unchanged, FP rate will read n/a.
+- **Task 8 ✅** `d99362e` (+ gate resolution commit) — scored: eu_benchmark **openalpr 26.9% / fastalpr_eu 88.9% / fastalpr_global 93.5%** exact-match; real_crops **44.4% / 88.9% / 100%** (fastalpr reads all 3 real Dacia crops, OpenALPR 0/3). Engine gap ~62 pp — decisive. **Close-call gate DID trigger between the two fast-alpr variants** (Δ4.6 pp, same stack — case the gate didn't anticipate); STUDENT DECISION: Task 9 spike ships BOTH OCR models, on-device numbers separate them; second public dataset only if both pass equivalently. Branch: fast-alpr leads ⇒ Task 9 next.
 - **Task 7 ✅** `e09dc5e` — fast-alpr 0.4.0 installed fine on py 3.14 (onnxruntime 1.27). **API deviation found by the repr check:** `ocr.confidence` is a per-character LIST, not a scalar → added `_mean_confidence` (mean, same convention as fast-alpr's own draw code) + a third test — harness total is now **24**, Task 10 Step 4 updated from 23. Runs (wall avg, laptop, indicative): eu_benchmark 119 ms (eu) / 76 ms (global); real_crops 174 ms (eu) / 64 ms (global). Preview before official scoring: fastalpr reads all 3 real Dacia crops (CJ45ARL) that OpenALPR missed; `global` variant reads 9/9 plausibly, `eu` variant misreads event_13.
 - **Task 6 ✅** `fe94524` (runner TDD 2/2) + `fa36963` (CSVs) — Jetson env fixes: apt `openalpr` ships **without `leu.traineddata`** → fetched from upstream `openalpr/openalpr` `runtime_data/ocr/tessdata/leu.traineddata` into `/usr/share/openalpr/runtime_data/ocr/`; GNU `time` needed `apt-get install time`. Measured (eu_benchmark, 108): **wall avg 1092 ms**, model-only 206 ms, **peak RSS 128528 KB ≈ 126 MB** (budgets < 2 s / < 500 MB: OK). real_crops (9): wall avg 951 ms, read **4/9** (BMW only, conf 0.9291), **0/3 on the real Dacia crops**, 1 alpr crash (event_15, empty stderr) recorded as no-read. Both datasets live on the Jetson too (scp trap: copying into an existing dir nests it — was fixed).
 - Jetson IP at time of writing: `192.168.0.188` (DHCP — rediscover via `arp -a`, MAC `00-04-4b`).
@@ -1238,7 +1239,7 @@ git commit -m "feat(bakeoff): fast-alpr runner + predictions for both OCR varian
 - Consumes: `evaluate.py` CLI (Task 3), all six predictions CSVs (Tasks 6–7).
 - Produces: accuracy tables + calibration CSVs; the input for the spike-or-not branch (Task 9) and the final decision (Task 10).
 
-- [ ] **Step 1: Generate both reports**
+- [x] **Step 1: Generate both reports**
 
 ```powershell
 .venv\Scripts\python experiments/anpr_bakeoff/evaluate.py --dataset experiments/anpr_bakeoff/data/eu_benchmark --pred openalpr_eu=experiments/anpr_bakeoff/predictions/openalpr_eu__eu_benchmark.csv --pred fastalpr_eu=experiments/anpr_bakeoff/predictions/fastalpr_eu__eu_benchmark.csv --pred fastalpr_global=experiments/anpr_bakeoff/predictions/fastalpr_global__eu_benchmark.csv --out experiments/anpr_bakeoff/predictions/report_eu_benchmark.md
@@ -1247,11 +1248,11 @@ git commit -m "feat(bakeoff): fast-alpr runner + predictions for both OCR varian
 
 Expected: two markdown tables on stdout + six `calib_*.csv` files.
 
-- [ ] **Step 2: Apply the close-call gate**
+- [x] **Step 2: Apply the close-call gate** *(triggered between the two fast-alpr variants only — resolution: spike both OCR models, see execution log)*
 
 Read the `eu_benchmark` table. **If** the best and second-best candidates' exact-match rates are within 10 percentage points, the sample (~108) cannot separate them: add a second public source before deciding — pick an EU plate-OCR dataset with per-image text labels from Roboflow Universe or Kaggle, write a converter to the canonical layout in the style of `convert_openalpr_benchmarks.py` (new file + test, same TDD cycle), regenerate predictions for the new dataset with Tasks 6–7's runners, and re-run Step 1. **Else** proceed.
 
-- [ ] **Step 3: Draft `experiments/anpr_bakeoff/RESULTS.md`**
+- [x] **Step 3: Draft `experiments/anpr_bakeoff/RESULTS.md`**
 
 ```markdown
 # ANPR bake-off — results
@@ -1286,16 +1287,16 @@ wins by feasibility.
 
 Fill every `<fill>` that exists at this point (accuracy tables, Ns, OpenALPR device numbers). Leave only Task 9/10 cells open.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff/RESULTS.md experiments/anpr_bakeoff/predictions/report_*.md experiments/anpr_bakeoff/predictions/calib_*.csv
 git commit -m "data(bakeoff): scored reports + draft RESULTS with decision rule restated"
 ```
 
-- [ ] **Step 5: Branch**
+- [x] **Step 5: Branch**
 
-If a fast-alpr variant leads on exact-match → Task 9 (spike). If OpenALPR leads outright → skip to Task 10.
+If a fast-alpr variant leads on exact-match → Task 9 (spike). If OpenALPR leads outright → skip to Task 10. *(fast-alpr leads ⇒ Task 9, with BOTH OCR models per the gate resolution.)*
 
 ---
 

@@ -25,7 +25,11 @@ The **engine** question is decisive: both fast-alpr variants beat
 OpenALPR by ~62 percentage points on exact-match. The 10-pp gate DOES
 trigger *between the two fast-alpr variants* (93.5% vs 88.9%, Δ = 4.6 pp
 — same engine, different OCR model), so N=108 alone cannot rank the two
-OCR variants with confidence. Resolution (student's call): <pending>.
+OCR variants with confidence. Resolution (student's call, 2026-07-18):
+the Task 9 spike ships BOTH OCR models to the Jetson and lets on-device
+feasibility/latency separate the variants; a second public dataset gets
+added only if both pass equivalently and the variant choice still
+matters for the verdict.
 
 ## Accuracy — real_crops (ours, N=9, cloud reads as ground truth)
 
