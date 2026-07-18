@@ -1,6 +1,6 @@
 # ANPR bake-off — results
 
-**Date:** 2026-07-18 · **Status:** DRAFT until the Task 9/10 boxes are ticked.
+**Date:** 2026-07-18 · **Status:** FINAL — Stage A closed.
 
 ## Decision rule (fixed in the spec BEFORE measuring)
 Winner = most accurate on exact-match that runs on the Jetson at
@@ -77,8 +77,36 @@ on ORT 1.9, while the global model (the accuracy leader, 93.5% / 100%)
 runs comfortably. No second public dataset needed.
 
 ## Verdict
-<filled by Task 10 — winner + why, citing the rule and the tables>
+
+**Winner: fast-alpr with the `cct-xs-v2-global-model` OCR** (paired with
+the `yolo-v9-t-384-license-plate-end2end` detector, re-stamped to opset
+15), running under onnxruntime 1.9.0 on CPU.
+
+Applying the decision rule mechanically:
+- **Feasible on the Jetson?** Yes — SPIKE PASS at ≈337 ms/crop and 110 MB
+  peak RSS, both inside the < 2 s / < 500 MB budgets (On-device table).
+- **Most accurate among the feasible?** Yes — 93.5% exact-match on
+  eu_benchmark and **100% on real_crops** (our own camera, the
+  tie-breaker), vs OpenALPR's 26.9% / 44.4%. The `fastalpr_eu` variant
+  scored close on the public set (88.9%) but is **not feasible** on this
+  runtime (its MobileViT OCR is opset 18 and cannot be downgraded to 15),
+  so it never enters the running.
+
+OpenALPR read **0 of the 3 real Dacia crops**; fast-alpr read all three.
+For our actual camera, this is the decisive gap.
 
 ## Confidence calibration notes (for Stage B's min_vehicle_confidence)
-<from calib_<winner>__*.csv: at which confidence do wrong reads die out?
-1-2 sentences + the threshold the STUDENT picks.>
+
+**Starting value: `min_vehicle_confidence = 0.90`** (student's call,
+2026-07-18).
+
+Why not higher: the global model's confidence does **not** separate
+correct from wrong reads. All 7 wrong reads on eu_benchmark sit at
+confidence ≥ 0.9997 — indistinguishable from the correct ones — while
+correct reads go as low as 0.9733 (eu) and 0.9103 (a real plate). There
+is therefore no threshold that removes errors without discarding correct
+reads; a higher floor would only throw away good reads and keep every
+error. So 0.90 is used purely as a garbage floor (it keeps all 117
+observed correct reads), and the **real error filter in Stage B must be
+multi-frame track agreement** — the tracker seeing the same plate across
+several frames — not this confidence number. To be re-checked live.

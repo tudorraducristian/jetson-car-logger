@@ -23,4 +23,5 @@ real-crop export, ONNX feasibility spike.
 Harness tests: `pytest experiments/anpr_bakeoff -v` (kept out of the app
 suite by pytest.ini's `testpaths = tests`).
 
-Verdict: see `RESULTS.md`.
+Verdict (2026-07-18): fast-alpr + cct-xs-v2-global OCR (opset-15 detector,
+onnxruntime 1.9 CPU) — see `RESULTS.md` for the numbers.

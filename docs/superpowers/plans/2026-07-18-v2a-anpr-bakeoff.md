@@ -10,7 +10,10 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-18-v2-local-anpr-design.md` (approved 2026-07-18).
 
-## Execution log (updated 2026-07-18 — RESUME AT TASK 10)
+## Execution log (updated 2026-07-18 — STAGE A COMPLETE)
+
+- **Task 10 ✅** — Verdict: **fast-alpr + cct-xs-v2-global OCR** (opset-15 detector, ORT 1.9 CPU). Student picked **min_vehicle_confidence = 0.90** as the Stage B starting floor, with the recorded reasoning that the global model's confidence does NOT separate correct from wrong (all 7 eu errors ≥0.9997) → confidence is a garbage floor only, the real error filter in Stage B is multi-frame track agreement. Harness suite: **24 passed**. RESULTS.md FINAL, README verdict pointer updated.
+
 
 - **Task 1 ✅** `bd4fda1` — metrics TDD 6/6; `.venv` (py 3.14) created at repo root; collect-only isolation proven.
 - **Task 2 ✅** `2305f02` — datasets TDD 6/6.
@@ -1498,19 +1501,19 @@ Student pastes the FULL output (the shape/config prints matter as much as PASS/F
 - Consumes: everything measured in Tasks 6–9.
 - Produces: the named winner + the student's chosen `min_vehicle_confidence` starting value — the two inputs Stage B's plan is written around.
 
-- [ ] **Step 1: Fill the verdict**
+- [x] **Step 1: Fill the verdict**
 
 Apply the decision rule to the tables — mechanically, no re-litigating: filter candidates to those with on-device proof (< 2 s/crop, < 500 MB added RSS), then pick the best exact-match among them (weigh `real_crops` as the tie-breaker — it is our camera). Name the winner in RESULTS.md's Verdict section, citing the exact rows.
 
-- [ ] **Step 2: STUDENT DECISION — calibration read**
+- [x] **Step 2: STUDENT DECISION — calibration read** *(0.90 floor; confidence proven non-separating — real filter is multi-frame agreement in Stage B)*
 
 The student opens the winner's `calib_*` CSVs (confidence,correct), sorts by confidence, and answers in RESULTS.md's calibration section: *above which confidence are essentially all reads correct?* That number is the **starting** `min_vehicle_confidence` for Stage B (it will be re-checked live). This is the student's call, recorded with a sentence of why — same ritual as the 0.85 decision on 2026-07-08.
 
-- [ ] **Step 3: Update README verdict pointer**
+- [x] **Step 3: Update README verdict pointer**
 
 In `experiments/anpr_bakeoff/README.md`, replace the line `Verdict: see RESULTS.md.` with `Verdict (<date>): <winner> — see RESULTS.md for the numbers.`
 
-- [ ] **Step 4: Run the full harness test suite one last time**
+- [x] **Step 4: Run the full harness test suite one last time**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff -v`
 Expected: **24 passed** (6 metrics + 6 datasets + 4 evaluate + 2 convert +
