@@ -48,7 +48,33 @@ both datasets: the student's plateless triage found no qualifying crops.
 | candidate | latency/crop | peak RSS | source |
 |---|---|---|---|
 | openalpr_eu | 1092 ms wall avg (model-only 206 ms) | 128528 KB ≈ 126 MB | measured, alpr CLI (per-process; in-process will be faster) |
-| fastalpr_* | <Task 9 spike> | <Task 9 spike> | spike |
+| fastalpr_global | ≈337 ms (detector 305 + OCR 32) | 110 MB | Task 9 spike, ORT 1.9 CPU, **SPIKE PASS** |
+
+### Task 9 spike — ONNX-on-Jetson feasibility (ORT 1.9.0 CPU, py3.6)
+`SPIKE PASS` for the **global** stack: the cct-xs-v2-global OCR read
+`CJ45ARL` correct (conf 1.000) at 32 ms/crop, and the yolo-v9-t detector
+ran at 305 ms/crop returning the expected `(1, 7)` output; peak process
+RSS 110 MB. Both budgets met (< 2 s/crop, < 500 MB).
+
+Two feasibility facts fixed on the way (both matter for Stage B):
+1. **numpy ≥1.19.5 wheels SIGILL on the Tegra X1** unless
+   `OPENBLAS_CORETYPE=ARMV8` is set — the Stage B systemd unit must
+   export it.
+2. **Opset ceiling.** ORT 1.9 (the last onnxruntime with a cp36 aarch64
+   wheel) officially supports **opset ≤15**. The models as shipped by
+   the hub are higher: yolo-v9-t detector = opset 17, european OCR =
+   opset 18. The detector was re-stamped to opset 15 with
+   `onnx.version_converter` — output is **bit-identical** to the
+   original (verified on the laptop), and it loads+runs on ORT 1.9. The
+   **european** OCR could NOT be downgraded (Resize op has no opset-15
+   adapter), so it is not usable on this runtime — but it lost on
+   accuracy anyway, so the winner is unaffected. Stage B must ship the
+   **opset-15 detector** + the **already-opset-15 global OCR**.
+
+This also **resolves the close-call gate**: on-device feasibility itself
+separated the two OCR variants — the european model does not even load
+on ORT 1.9, while the global model (the accuracy leader, 93.5% / 100%)
+runs comfortably. No second public dataset needed.
 
 ## Verdict
 <filled by Task 10 — winner + why, citing the rule and the tables>

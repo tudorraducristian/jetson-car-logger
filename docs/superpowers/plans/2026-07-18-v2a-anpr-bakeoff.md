@@ -10,13 +10,14 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-18-v2-local-anpr-design.md` (approved 2026-07-18).
 
-## Execution log (updated 2026-07-18 — RESUME AT TASK 9)
+## Execution log (updated 2026-07-18 — RESUME AT TASK 10)
 
 - **Task 1 ✅** `bd4fda1` — metrics TDD 6/6; `.venv` (py 3.14) created at repo root; collect-only isolation proven.
 - **Task 2 ✅** `2305f02` — datasets TDD 6/6.
 - **Task 3 ✅** `faad918` — evaluator TDD 4/4.
 - **Task 4 ✅** `881ffd5` — converter TDD 2/2; sparse clone done; `data/eu_benchmark` = **108 labeled** (loader-validated).
 - **Task 5 ✅** `3c2692b` — exporter TDD 1/1; Jetson: **91 passed** (app suite untouched) + `real_crops: 9 labeled images`; scp'd back, loader-validated 9. Only 3 unique plates: MMM8748 ×4 + EL147AD ×2 are *photos shown to the camera*; CJ45ARL ×3 (Dacia) is the only true camera capture. **Plateless triage: student confirmed NONE qualify** — labels.csv unchanged, FP rate will read n/a.
+- **Task 9 ✅** `2df8a70` (spike script) — **SPIKE PASS on ORT 1.9 CPU** for the global stack: cct-xs global OCR reads CJ45ARL conf 1.000 @ 32 ms/crop, yolo-v9-t detector @ 305 ms, output (1,7), **peak RSS 110 MB** (budgets < 2s / < 500 MB: OK). Two blockers cleared: (1) numpy ≥1.19.5 SIGILLs on Tegra X1 → `OPENBLAS_CORETYPE=ARMV8` (saved to memory `jetson-hardware-constraints`); (2) **opset ceiling** — ORT 1.9 = opset ≤15; detector was opset 17 (re-stamped to 15 via `onnx.version_converter`, bit-identical output, verified laptop), european OCR opset 18 (no opset-15 Resize adapter → unusable, but lost on accuracy anyway). Close-call gate **resolved by feasibility**: european doesn't load, global runs. trtexec fallback NOT needed. Detector-crop caveat found in laptop dry-run: OCR needs the tight plate crop (whole frame → garbage). Jetson spike venv `~/anpr_spike_venv` (--system-site-packages, ORT 1.9.0 + numpy 1.19.5 + pyyaml 5.4.1); models in `~/anpr_spike/` (incl. `yolo_v9_opset15.onnx`).
 - **Task 8 ✅** `d99362e` (+ gate resolution commit) — scored: eu_benchmark **openalpr 26.9% / fastalpr_eu 88.9% / fastalpr_global 93.5%** exact-match; real_crops **44.4% / 88.9% / 100%** (fastalpr reads all 3 real Dacia crops, OpenALPR 0/3). Engine gap ~62 pp — decisive. **Close-call gate DID trigger between the two fast-alpr variants** (Δ4.6 pp, same stack — case the gate didn't anticipate); STUDENT DECISION: Task 9 spike ships BOTH OCR models, on-device numbers separate them; second public dataset only if both pass equivalently. Branch: fast-alpr leads ⇒ Task 9 next.
 - **Task 7 ✅** `e09dc5e` — fast-alpr 0.4.0 installed fine on py 3.14 (onnxruntime 1.27). **API deviation found by the repr check:** `ocr.confidence` is a per-character LIST, not a scalar → added `_mean_confidence` (mean, same convention as fast-alpr's own draw code) + a third test — harness total is now **24**, Task 10 Step 4 updated from 23. Runs (wall avg, laptop, indicative): eu_benchmark 119 ms (eu) / 76 ms (global); real_crops 174 ms (eu) / 64 ms (global). Preview before official scoring: fastalpr reads all 3 real Dacia crops (CJ45ARL) that OpenALPR missed; `global` variant reads 9/9 plausibly, `eu` variant misreads event_13.
 - **Task 6 ✅** `fe94524` (runner TDD 2/2) + `fa36963` (CSVs) — Jetson env fixes: apt `openalpr` ships **without `leu.traineddata`** → fetched from upstream `openalpr/openalpr` `runtime_data/ocr/tessdata/leu.traineddata` into `/usr/share/openalpr/runtime_data/ocr/`; GNU `time` needed `apt-get install time`. Measured (eu_benchmark, 108): **wall avg 1092 ms**, model-only 206 ms, **peak RSS 128528 KB ≈ 126 MB** (budgets < 2 s / < 500 MB: OK). real_crops (9): wall avg 951 ms, read **4/9** (BMW only, conf 0.9291), **0/3 on the real Dacia crops**, 1 alpr crash (event_15, empty stderr) recorded as no-read. Both datasets live on the Jetson too (scp trap: copying into an existing dir nests it — was fixed).
@@ -1309,7 +1310,7 @@ If a fast-alpr variant leads on exact-match → Task 9 (spike). If OpenALPR lead
 - Consumes: the laptop's cached model files (OCR: `~/.cache/fast-plate-ocr/<model>/ *.onnx` + `*_config.yaml`; detector: search `~/.cache/` for the `yolo-v9-t-384*` onnx — fast-alpr's detector package caches similarly), `onnxruntime==1.9.0` (verified cp36 aarch64 manylinux wheel on PyPI), the Jetson's system `numpy`/`cv2` (JetPack) + `pyyaml` (app venv has 5.4.1).
 - Produces: PASS/FAIL feasibility verdict + measured latency and RSS for the RESULTS table. Spike code is throwaway-quality by design but still committed (it documents HOW we know).
 
-- [ ] **Step 1: Locate and ship the model files**
+- [x] **Step 1: Locate and ship the model files** *(both OCR + detector shipped to `~/anpr_spike/`; tight plate crop `event_22_plate.jpg` too — OCR needs the detector crop, not a whole frame)*
 
 Laptop — find the cached files (they were downloaded during Task 7):
 
@@ -1321,7 +1322,7 @@ scp <the .onnx and config .yaml paths found above> tudor@<JETSON_IP>:~/anpr_spik
 
 Expected: at least the winning OCR model's `.onnx` + its config yaml, and the detector `.onnx`, listed and copied. (If the cache lives elsewhere on this machine, `pip show fast-plate-ocr` + its docs name `~/.cache/fast-plate-ocr` — search `%LOCALAPPDATA%` too before concluding it's missing.)
 
-- [ ] **Step 2: CHECKPOINT (JETSON, student) — spike venv + onnxruntime install**
+- [x] **Step 2: CHECKPOINT (JETSON, student) — spike venv + onnxruntime install** *(ORT 1.9.0 imports on py3.6/aarch64 — but only with `OPENBLAS_CORETYPE=ARMV8`, else numpy 1.19.5 SIGILLs)*
 
 ```bash
 python3 -m venv --system-site-packages ~/anpr_spike_venv
@@ -1332,7 +1333,7 @@ python3 -m venv --system-site-packages ~/anpr_spike_venv
 
 Expected: `1.9.0`. (`--system-site-packages` picks up JetPack's numpy/cv2; the app venv stays untouched.) If pip cannot find the wheel, paste the exact error — do NOT compile from source; that is the trigger to move to the trtexec fallback (Step 6).
 
-- [ ] **Step 3: Write the spike script**
+- [x] **Step 3: Write the spike script** *(as committed; laptop-dry-run hardened: flattened-head reshape, RGB vs grayscale per config, `resource` import guarded for the laptop)*
 
 `experiments/anpr_bakeoff/spike_onnx_jetson.py`:
 
@@ -1449,7 +1450,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Commit and push**
+- [x] **Step 4: Commit and push**
 
 ```bash
 git add experiments/anpr_bakeoff/spike_onnx_jetson.py
@@ -1457,7 +1458,7 @@ git commit -m "feat(bakeoff): onnxruntime-on-py36 feasibility spike for the fast
 git push
 ```
 
-- [ ] **Step 5: CHECKPOINT (JETSON, student) — run the spike**
+- [x] **Step 5: CHECKPOINT (JETSON, student) — run the spike** *(SPIKE PASS with global OCR + opset-15 detector; european OCR opset 18 wouldn't load — see Step 6 note)*
 
 ```bash
 cd ~/jetson-car-logger && git pull
@@ -1474,7 +1475,7 @@ Student pastes the FULL output (the shape/config prints matter as much as PASS/F
 - Load error mentioning unsupported opset / `Unsupported model IR version` → Step 6.
 - Text mismatch with sane latency → pre/post-processing guesswork is off; compare against the config print, adjust `preprocess_plate`/`decode_ocr` per what the config says (slots/alphabet/dims), retry once; if still off, treat as FAIL and go to Step 6.
 
-- [ ] **Step 6 (only if Step 2 or 5 failed): TensorRT fallback**
+- [x] **Step 6 (only if Step 2 or 5 failed): TensorRT fallback** — *NOT NEEDED. The Step 5 opset failure was cleared upstream of TRT by re-stamping the detector to opset 15 with `onnx.version_converter` (bit-identical output, then loads on ORT 1.9). CPU path holds; no trtexec run.*
 
 ```bash
 /usr/src/tensorrt/bin/trtexec --onnx=$HOME/anpr_spike/european_mobile_vit_v2_ocr.onnx \
