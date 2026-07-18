@@ -10,6 +10,17 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-18-v2-local-anpr-design.md` (approved 2026-07-18).
 
+## Execution log (updated 2026-07-18 — RESUME AT TASK 7)
+
+- **Task 1 ✅** `bd4fda1` — metrics TDD 6/6; `.venv` (py 3.14) created at repo root; collect-only isolation proven.
+- **Task 2 ✅** `2305f02` — datasets TDD 6/6.
+- **Task 3 ✅** `faad918` — evaluator TDD 4/4.
+- **Task 4 ✅** `881ffd5` — converter TDD 2/2; sparse clone done; `data/eu_benchmark` = **108 labeled** (loader-validated).
+- **Task 5 ✅** `3c2692b` — exporter TDD 1/1; Jetson: **91 passed** (app suite untouched) + `real_crops: 9 labeled images`; scp'd back, loader-validated 9. Only 3 unique plates: MMM8748 ×4 + EL147AD ×2 are *photos shown to the camera*; CJ45ARL ×3 (Dacia) is the only true camera capture. **Plateless triage: student confirmed NONE qualify** — labels.csv unchanged, FP rate will read n/a.
+- **Task 6 ✅** `fe94524` (runner TDD 2/2) + `fa36963` (CSVs) — Jetson env fixes: apt `openalpr` ships **without `leu.traineddata`** → fetched from upstream `openalpr/openalpr` `runtime_data/ocr/tessdata/leu.traineddata` into `/usr/share/openalpr/runtime_data/ocr/`; GNU `time` needed `apt-get install time`. Measured (eu_benchmark, 108): **wall avg 1092 ms**, model-only 206 ms, **peak RSS 128528 KB ≈ 126 MB** (budgets < 2 s / < 500 MB: OK). real_crops (9): wall avg 951 ms, read **4/9** (BMW only, conf 0.9291), **0/3 on the real Dacia crops**, 1 alpr crash (event_15, empty stderr) recorded as no-read. Both datasets live on the Jetson too (scp trap: copying into an existing dir nests it — was fixed).
+- Jetson IP at time of writing: `192.168.0.188` (DHCP — rediscover via `arp -a`, MAC `00-04-4b`).
+- Session convention: **one task per turn, written summary after each, wait for OK** before the next.
+
 ## Global Constraints
 
 - **Split execution (project convention):** LAPTOP = Claude writes/commits/pushes and runs laptop-side steps; JETSON = the student runs the marked steps and pastes output back. The Jetson may also be reachable via ssh (IP moves with DHCP — rediscover via `arp -a`, MAC `00-04-4b`; see memory note). Jetson steps are **checkpoints**: do not proceed past them without the student's pasted result.
@@ -73,7 +84,7 @@ Candidate ids used in filenames and reports: `openalpr_eu`, `fastalpr_eu`, `fast
 - Consumes: `car_logger.services.plate_rules.normalize_plate` (existing; pure, no deps).
 - Produces: `exact_match(predicted, truth) -> bool`, `levenshtein(a, b) -> int`, `cer(predicted, truth) -> float` — used by `evaluate.py` (Task 3).
 
-- [ ] **Step 1: Create the laptop venv (one-time) and install pytest**
+- [x] **Step 1: Create the laptop venv (one-time) and install pytest**
 
 ```powershell
 py -3.14 -m venv .venv
@@ -82,7 +93,7 @@ py -3.14 -m venv .venv
 
 Expected: venv created at repo root (`.venv/` is already gitignored). All laptop `pytest`/`python` commands below mean `.venv\Scripts\pytest` / `.venv\Scripts\python`.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `experiments/anpr_bakeoff/test_metrics.py`:
 
@@ -121,12 +132,12 @@ def test_cer_one_wrong_char_out_of_seven():
     assert abs(cer("B123ABD", "B123ABC") - 1.0 / 7.0) < 1e-9
 ```
 
-- [ ] **Step 3: Run tests to verify they fail**
+- [x] **Step 3: Run tests to verify they fail**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_metrics.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'metrics'`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 `experiments/anpr_bakeoff/metrics.py`:
 
@@ -185,12 +196,12 @@ def cer(predicted, truth):
 
 Note on imports: bake-off modules import each other as plain siblings (`from metrics import …`) — both `python experiments/anpr_bakeoff/x.py` and `pytest experiments/anpr_bakeoff` put the script's own directory on `sys.path`. Only the repo root (for `car_logger`) needs the explicit insert above.
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_metrics.py -v`
 Expected: 6 passed
 
-- [ ] **Step 6: Create README stub and predictions dir**
+- [x] **Step 6: Create README stub and predictions dir**
 
 `experiments/anpr_bakeoff/README.md`:
 
@@ -225,7 +236,7 @@ Verdict: see `RESULTS.md`.
 
 Create empty `experiments/anpr_bakeoff/predictions/.gitkeep`.
 
-- [ ] **Step 7: Prove the harness stays out of the app suite**
+- [x] **Step 7: Prove the harness stays out of the app suite**
 
 The laptop cannot run the app suite at all (no fastapi in `.venv` — the app
 runs on the Jetson), so the check here is isolation only:
@@ -237,7 +248,7 @@ The converse guard (default `pytest` on the Jetson still collects only the
 app's 91) is a student checkpoint in Task 5 Step 6 — `pytest.ini`'s
 `testpaths = tests` is what protects it.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff
@@ -260,7 +271,7 @@ git commit -m "feat(bakeoff): metrics module - the referee of the ANPR bake-off 
   - `write_predictions(path, rows)` — rows of `(filename, plate_text_or_None, confidence_or_None, latency_ms)`.
   - `read_predictions(path) -> dict[filename -> (plate_text_or_None, confidence_or_None, latency_ms)]`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `experiments/anpr_bakeoff/test_datasets.py`:
 
@@ -326,12 +337,12 @@ def test_predictions_round_trip(tmp_path):
     }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_datasets.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'datasets'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `experiments/anpr_bakeoff/datasets.py`:
 
@@ -403,12 +414,12 @@ def read_predictions(path):
     return out
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_datasets.py -v`
 Expected: 6 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff/datasets.py experiments/anpr_bakeoff/test_datasets.py
@@ -430,7 +441,7 @@ git commit -m "feat(bakeoff): canonical dataset layout + predictions CSV round-t
   - `calibration_rows(labels, preds) -> list[(confidence, correct_bool)]` (only rows where the candidate read something) — the raw material for recalibrating `min_vehicle_confidence` in Stage B.
   - CLI: `python evaluate.py --dataset data/<name> --pred <candidate>=<csv> [--pred …] --out predictions/report_<name>.md` — also writes `predictions/calib_<candidate>__<name>.csv` per candidate.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `experiments/anpr_bakeoff/test_evaluate.py`:
 
@@ -471,12 +482,12 @@ def test_calibration_rows_only_actual_reads_with_correctness():
     assert rows == [(0.95, True), (0.60, False)]
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_evaluate.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'evaluate'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `experiments/anpr_bakeoff/evaluate.py`:
 
@@ -598,12 +609,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_evaluate.py -v`
 Expected: 4 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff/evaluate.py experiments/anpr_bakeoff/test_evaluate.py
@@ -622,7 +633,7 @@ git commit -m "feat(bakeoff): evaluator - comparison table + confidence calibrat
 - Consumes: upstream repo `openalpr/benchmarks`, folder `endtoend/eu` — verified format (2026-07-18): pairs `<name>.jpg` + `<name>.txt`; each txt line is TAB-separated `filename x y w h plate_text` (e.g. `eu1.jpg	396	340	203	46	M5XSX`).
 - Produces: `data/eu_benchmark/` in canonical layout; `parse_annotation_line(line) -> (filename, plate_text)`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `experiments/anpr_bakeoff/test_convert_openalpr_benchmarks.py`:
 
@@ -642,12 +653,12 @@ def test_parse_annotation_line_rejects_garbage():
         parse_annotation_line("not-an-annotation\n")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_convert_openalpr_benchmarks.py -v`
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `experiments/anpr_bakeoff/convert_openalpr_benchmarks.py`:
 
@@ -708,12 +719,12 @@ if __name__ == "__main__":
     print("eu_benchmark: {0} labeled images".format(count))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_convert_openalpr_benchmarks.py -v`
 Expected: 2 passed
 
-- [ ] **Step 5: Clone the source and run the conversion**
+- [x] **Step 5: Clone the source and run the conversion**
 
 ```powershell
 git clone --depth 1 --filter=blob:none --sparse https://github.com/openalpr/benchmarks experiments/anpr_bakeoff/data/_src/benchmarks
@@ -726,7 +737,7 @@ Expected: conversion prints ~100+ labeled images; the loader validates and print
 
 **Known deviation from spec, on record:** the spec preferred ~500–1000 public images; this source has ~108 with verified ground-truth text. Rule (see Task 8): if the top two candidates land within 10 percentage points of exact-match on this dataset, we add a second public source before deciding. Verified text labels beat unverifiable bulk.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add experiments/anpr_bakeoff/convert_openalpr_benchmarks.py experiments/anpr_bakeoff/test_convert_openalpr_benchmarks.py
@@ -745,7 +756,7 @@ git commit -m "feat(bakeoff): openalpr-benchmarks eu converter + dataset recipe 
 - Consumes: the Jetson's `car_logger.db` (table `events`: `id`, `plate_text`, `anpr_status`) and `data/plates/<event_id>.jpg` (both live only on the Jetson).
 - Produces: `data/real_crops/` in canonical layout; `export(db_path, plates_dir, out_dir) -> int`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `experiments/anpr_bakeoff/test_export_real_crops.py`:
 
@@ -788,12 +799,12 @@ def test_export_only_successful_reads_with_existing_crop(tmp_path):
     assert os.path.isfile(os.path.join(out, "images", "event_1.jpg"))
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_export_real_crops.py -v`
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `experiments/anpr_bakeoff/export_real_crops.py`:
 
@@ -853,12 +864,12 @@ if __name__ == "__main__":
     print("real_crops: {0} labeled images".format(count))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_export_real_crops.py -v`
 Expected: 1 passed
 
-- [ ] **Step 5: Commit and push**
+- [x] **Step 5: Commit and push**
 
 ```bash
 git add experiments/anpr_bakeoff/export_real_crops.py experiments/anpr_bakeoff/test_export_real_crops.py
@@ -866,7 +877,7 @@ git commit -m "feat(bakeoff): Jetson real-crops exporter - cloud reads become gr
 git push
 ```
 
-- [ ] **Step 6: CHECKPOINT (JETSON, student) — run the export**
+- [x] **Step 6: CHECKPOINT (JETSON, student) — run the export**
 
 ```bash
 cd ~/jetson-car-logger && git pull
@@ -876,7 +887,7 @@ python3 experiments/anpr_bakeoff/export_real_crops.py
 
 Expected: `pytest` still reports **91 passed** (proof the harness stayed out of the app suite — the counterpart of Task 1 Step 7), then `real_crops: N labeled images` with N < 50 (per current DB estimate). Student pastes both.
 
-- [ ] **Step 7: CHECKPOINT (JETSON→LAPTOP) — copy the dataset to the laptop**
+- [x] **Step 7: CHECKPOINT (JETSON→LAPTOP) — copy the dataset to the laptop**
 
 On the laptop (find the current IP first if it moved: `arp -a | findstr "00-04-4b"`):
 
@@ -887,7 +898,7 @@ scp -r tudor@<JETSON_IP>:~/jetson-car-logger/experiments/anpr_bakeoff/data/real_
 
 Expected: loader prints the same N.
 
-- [ ] **Step 8: CHECKPOINT (student, manual) — plateless triage**
+- [x] **Step 8: CHECKPOINT (student, manual) — plateless triage**
 
 The student eyeballs `data/real_crops/images/` for crops where no plate is
 visible at all (bad angle, rear without plate). For each such image: move
@@ -909,7 +920,7 @@ the Jetson runners in Task 6 pull the laptop-curated copy via scp anyway.)
 - Consumes: `datasets.load_labels/list_plateless/write_predictions`; the `alpr` CLI (`-c eu -j -n 1`), whose JSON has `results[0].plate`, `results[0].confidence` (0–100) and top-level `processing_time_ms`.
 - Produces: `predictions/openalpr_eu__<dataset>.csv` per dataset; `parse_alpr_json(text) -> (plate_text_or_None, confidence_0_1_or_None, processing_ms)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `experiments/anpr_bakeoff/test_run_openalpr.py`:
 
@@ -932,12 +943,12 @@ def test_parse_alpr_json_no_results_means_no_read():
     assert parse_alpr_json(payload) == (None, None, 380.0)
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_run_openalpr.py -v`
 Expected: FAIL — `ModuleNotFoundError`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 `experiments/anpr_bakeoff/run_openalpr.py`:
 
@@ -1009,12 +1020,12 @@ if __name__ == "__main__":
 
 (py3.6 note: `subprocess.run` exists; `capture_output=` does not — hence explicit `stdout=/stderr=`.)
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `.venv\Scripts\pytest experiments/anpr_bakeoff/test_run_openalpr.py -v`
 Expected: 2 passed
 
-- [ ] **Step 5: Commit and push**
+- [x] **Step 5: Commit and push**
 
 ```bash
 git add experiments/anpr_bakeoff/run_openalpr.py experiments/anpr_bakeoff/test_run_openalpr.py
@@ -1022,7 +1033,7 @@ git commit -m "feat(bakeoff): OpenALPR CLI runner with honest dual latency repor
 git push
 ```
 
-- [ ] **Step 6: CHECKPOINT (JETSON, student) — install OpenALPR and smoke-test**
+- [x] **Step 6: CHECKPOINT (JETSON, student) — install OpenALPR and smoke-test**
 
 ```bash
 sudo apt-get update && sudo apt-get install -y openalpr
@@ -1031,7 +1042,7 @@ which alpr && alpr --version
 
 Expected: a path and a version string. If `alpr` is missing after install, try `sudo apt-get install -y openalpr-utils` (Debian sometimes splits the CLI) and paste what apt says either way.
 
-- [ ] **Step 7: CHECKPOINT (LAPTOP→JETSON) — ship both curated datasets, run both, fetch CSVs**
+- [x] **Step 7: CHECKPOINT (LAPTOP→JETSON) — ship both curated datasets, run both, fetch CSVs**
 
 Laptop (ship the curated copies — the Task 5 triage happened on the laptop):
 
