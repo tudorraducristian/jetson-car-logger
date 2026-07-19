@@ -451,7 +451,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   Task 7's worker calls `read_plate_multi`; Task 5's engines implement
   the duck-types; Task 9 wires it all in `main.py`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/unit/test_local_anpr.py`:
 
@@ -576,12 +576,12 @@ def test_close_is_safe_with_and_without_engine_close():
     assert detector.closed is True
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_local_anpr.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'car_logger.services.local_anpr'`.
 
-- [ ] **Step 3: Implement `car_logger/services/local_anpr.py`**
+- [x] **Step 3: Implement `car_logger/services/local_anpr.py`**
 
 ```python
 """Local two-stage ANPR client: plate detection -> OCR -> vote.
@@ -660,12 +660,12 @@ class LocalAnprClient(object):
                     crops[0] if crops else b"")
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_local_anpr.py -v`
 Expected: 8 passed. Full suite: 111 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/local_anpr.py tests/unit/test_local_anpr.py
@@ -2205,4 +2205,10 @@ demo video is still owed.
   (commit `2393371`). NOTE: the plan's expected counts were off by one —
   its own test file has 11 tests, not 12; every later "full suite"
   target shifts by −1 (Task 4: 110, T5: 117, T6: 122, T7: 123, T8: 126,
-  T9/T10: 128). **Next: Task 4** (LocalAnprClient, TDD).
+  T9/T10: 128).
+- **Task 4 DONE (2026-07-19):** LocalAnprClient implemented TDD — RED
+  proven on the Jetson (collection error, commit `fec6c01`), then GREEN:
+  **8 passed** + full suite **110 passed** (commit `22bafc1`). Two-stage
+  read behind the v1 contract, never-raises, OCR only after a detected
+  plate, read_plate_multi returns the winning crop as evidence. **Next:
+  Task 5** (onnx_engines, TDD on the pure decode helpers).
