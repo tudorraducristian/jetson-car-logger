@@ -2292,3 +2292,13 @@ demo video is still owed.
   window needs a live camera seeing real cars, and the 8th-floor angle is
   a known problem. Step 7 (open the window) HELD pending the student's call
   on the camera / validation approach.
+- **STOPPING POINT — Task 11 DEFERRED by student decision (2026-07-19).** After
+  Steps 5 & 6 the student questioned the validation window's value (the local
+  engine is already live, so the window only ever gated the OPTIONAL destructive
+  cleanup) and chose to **leave the cloud client dormant as a fallback rather
+  than delete it.** So Step 7 is intentionally NOT done (no
+  `docs/v2-stage-b-validation-log.md`), and **Task 11 is NOT to be executed —
+  do NOT delete `anpr_client.py` / the API key / httpx without an explicit new
+  go-ahead.** v2 is functionally COMPLETE and deployed (app 0.6.0, local ANPR
+  live, offline read proven, 128 tests green). Real remaining work is the v1
+  leftovers only: demo video + README/architecture in the student's voice.
