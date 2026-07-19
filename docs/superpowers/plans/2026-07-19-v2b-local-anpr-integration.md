@@ -91,7 +91,7 @@ tests/integration/test_dashboard.py           MOD  filter + badge
 - Consumes: laptop caches `C:\Users\40747\.cache\fast-plate-ocr\cct-xs-v2-global-model\` and `C:\Users\40747\.cache\open-image-models\yolo-v9-t-384-license-plate-end2end\` (left by the Stage A bake-off).
 - Produces: the three model files at the exact paths above — Task 9's config defaults and Task 10's smoke test use these paths verbatim.
 
-- [ ] **Step 1: Copy the OCR model + config from the laptop cache**
+- [x] **Step 1: Copy the OCR model + config from the laptop cache**
 
 Run (laptop, git-bash, from repo root):
 ```bash
@@ -102,7 +102,7 @@ ls -la models/anpr/
 ```
 Expected: two files, ~3.3 MB + ~1.7 KB.
 
-- [ ] **Step 2: Re-stamp the detector to opset 15**
+- [x] **Step 2: Re-stamp the detector to opset 15**
 
 The hub detector is opset 17; ORT 1.9 (the Jetson's last cp36 wheel)
 supports ≤15. The Stage A spike proved the conversion is output-identical.
@@ -124,7 +124,7 @@ PY
 ```
 Expected: `original opset: 17`, `saved: ... opset: 15`.
 
-- [ ] **Step 3: Verify the opset-15 model is output-identical to the original**
+- [x] **Step 3: Verify the opset-15 model is output-identical to the original**
 
 Run (laptop — `.venv` has onnxruntime via `fast-alpr[onnx]` from Stage A):
 ```bash
@@ -145,7 +145,7 @@ PY
 ```
 Expected: `bit-identical outputs: True`.
 
-- [ ] **Step 4: Write `models/anpr/README.md`**
+- [x] **Step 4: Write `models/anpr/README.md`**
 
 ```markdown
 # Local ANPR models (v2 Stage B)
@@ -166,7 +166,7 @@ Jetson CPU. Do NOT swap or upgrade these files without re-running the
 bake-off.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add models/anpr
@@ -2191,4 +2191,8 @@ demo video is still owed.
 
 ## Execution log
 
-_(filled in as tasks complete — resume point lives here)_
+- **Task 1 DONE (2026-07-19, laptop):** models copied from the Stage A
+  caches, detector re-stamped opset 17 → 15, outputs verified
+  bit-identical (`True`), README written. Commit `1549452`. Jetson not
+  needed yet. **Next: Task 2** (needs the Jetson on + LAN for the
+  checkpoint).
