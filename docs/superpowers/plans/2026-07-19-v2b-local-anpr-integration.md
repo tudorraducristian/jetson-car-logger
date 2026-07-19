@@ -1176,7 +1176,7 @@ policy, drain-as-skipped, defense-in-depth: all unchanged.
   bytes; `on_result(event_id, result, evidence_bytes)` — the existing
   `_make_on_result` signature, untouched.
 
-- [ ] **Step 1: Update the tests to the new client API**
+- [x] **Step 1: Update the tests to the new client API**
 
 Replace the fakes and submits in `tests/unit/test_anpr_worker.py` so the
 whole file reads:
@@ -1291,13 +1291,13 @@ def test_stop_drains_pending_jobs_as_skipped_and_closes_client():
     assert client.closed is True
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_anpr_worker.py -v`
 Expected: FAIL — the worker still calls `read_plate` (AttributeError on
 the fakes) and unpacks a single result.
 
-- [ ] **Step 3: Adapt the worker**
+- [x] **Step 3: Adapt the worker**
 
 In `car_logger/services/anpr_worker.py`, update the docstring's third
 sentence and the three touched methods:
@@ -1366,13 +1366,13 @@ pipeline is not."""
                               event_id)
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_anpr_worker.py tests/unit/test_on_result.py -v`
 Expected: all pass — `test_on_result.py` UNTOUCHED and green (the
 callback contract did not move). Full suite: 124 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/anpr_worker.py tests/unit/test_anpr_worker.py
@@ -2225,3 +2225,10 @@ demo video is still owed.
   confirmation + spaced follow-ups, track-death handover, stale-box skip,
   drain() at shutdown; injectable clock + crop_fn. **Next: Task 7**
   (AnprWorker speaks crop lists — modifies existing worker + its tests).
+- **Task 7 DONE (2026-07-19):** AnprWorker adapted TDD — RED on the Jetson
+  (2 failed: worker still called read_plate, commit `2b4a9bd`), then
+  GREEN: worker + on_result **7 passed** (on_result UNTOUCHED — callback
+  contract intact) + full suite **123 passed** (commit `932a012`). Job is
+  now (event_id, [crops]) → read_plate_multi → (verdict, evidence);
+  queue/drop/drain semantics unchanged. **Next: Task 8** (dashboard filter
+  + no_plate badge, TDD — first UI/template task).
