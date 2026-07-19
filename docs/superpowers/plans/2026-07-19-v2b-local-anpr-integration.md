@@ -1599,7 +1599,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   `anpr_reads_per_track`, `anpr_read_spacing_s`;
   `PipelineWorker(..., collector=None)`; `app.state.crop_collector`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/unit/test_config.py`:
 
@@ -1651,13 +1651,13 @@ def test_pipeline_ticks_the_collector_every_frame():
     assert collector.ticks[0][1] == "frame"
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_config.py tests/unit/test_pipeline_resilience.py -v`
 Expected: new tests FAIL (missing settings attrs; `collector` unexpected
 keyword).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `config.py` — first, update the existing `min_vehicle_confidence` field
 (the 0.85 was calibrated for Plate Recognizer's score scale; the Stage A
@@ -1846,14 +1846,14 @@ def _shutdown():
     log.info("app_shutdown")
 ```
 
-- [ ] **Step 4: GREEN + full suite**
+- [x] **Step 4: GREEN + full suite**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest -q`
 Expected: 129 passed (127 + 2 new; startup wiring itself is exercised
 live in Task 10 — TestClient never fires startup, by design of the
 fixtures).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/config.py car_logger/services/pipeline.py car_logger/main.py .env.example tests/unit/test_config.py tests/unit/test_pipeline_resilience.py
@@ -2241,3 +2241,15 @@ demo video is still owed.
   `1d9bfaf`). Full suite **126 passed**. **Next: Task 9** (config + wiring
   in main.py — the local engine goes live; last laptop-side task before
   the Jetson deploy).
+- **Task 9 DONE (2026-07-19):** local ANPR stack wired live in main.py
+  (app 0.6.0) — TDD RED (2 failed) then GREEN, full suite **128 passed**
+  (commit `6fd2755`). Config gains model paths + vote knobs;
+  min_vehicle_confidence recalibrated 0.85→0.90; pipeline ticks the
+  collector every frame; startup builds OnnxPlateDetector+OnnxPlateOcr →
+  LocalAnprClient → AnprWorker + CropCollector; cloud AnprClient no longer
+  constructed (anpr_api_* settings stay until Task 11); shutdown drains
+  the collector before the worker. NOTE: startup wiring runs live only on
+  the Jetson (TestClient never fires startup) — Task 10 is its first real
+  exercise. **Next: Task 10** (Jetson deploy + smoke tests + live E2E —
+  the LAPTOP-only phase ends; needs the Jetson on with LAN, and briefly
+  toggles the internet off to prove the offline read).
