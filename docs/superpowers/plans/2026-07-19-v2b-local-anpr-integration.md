@@ -1884,7 +1884,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   in the repo root on the Jetson, `~/e2e_fake_cam.py`.
 - Produces: the running v2 appliance + the open validation window.
 
-- [ ] **Step 1: Pin the new Jetson dependencies (LAPTOP, commit + push)**
+- [x] **Step 1: Pin the new Jetson dependencies (LAPTOP, commit + push)**
 
 Append to `requirements.txt`:
 
@@ -1911,7 +1911,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 git push
 ```
 
-- [ ] **Step 2: Install on the Jetson**
+- [x] **Step 2: Install on the Jetson**
 
 Run (JETSON):
 ```bash
@@ -1927,7 +1927,7 @@ If the grep shows `MIN_VEHICLE_CONFIDENCE=0.85`, the student deletes or
 updates that line — a stale `.env` would silently override the new 0.90
 default from Task 9.
 
-- [ ] **Step 3: Smoke A — the committed models load and read, in the APP venv**
+- [x] **Step 3: Smoke A — the committed models load and read, in the APP venv**
 
 The Stage A spike ran in a separate venv; this proves the same thing in
 the venv that will run the appliance, against the files in git.
@@ -1943,7 +1943,7 @@ OPENBLAS_CORETYPE=ARMV8 venv/bin/python experiments/anpr_bakeoff/spike_onnx_jets
 ```
 Expected: `ocr read: 'CJ45ARL'` and `SPIKE PASS`.
 
-- [ ] **Step 4: Smoke B — jetson-inference still works under numpy 1.19.5**
+- [x] **Step 4: Smoke B — jetson-inference still works under numpy 1.19.5**
 
 The vehicle detector (cudaFromNumpy) has NEVER run against the new numpy
 — known risk carried in the spec. Run (JETSON):
@@ -2253,3 +2253,14 @@ demo video is still owed.
   exercise. **Next: Task 10** (Jetson deploy + smoke tests + live E2E —
   the LAPTOP-only phase ends; needs the Jetson on with LAN, and briefly
   toggles the internet off to prove the offline read).
+- **Task 10 IN PROGRESS (2026-07-19):** deps pinned + OPENBLAS env in the
+  unit (commit `c48be69`), pushed. On the Jetson: onnxruntime 1.9.0 +
+  numpy 1.19.5 installed; no `.env` override (0.90 default applies).
+  **Smoke A PASS** — committed models read `CJ45ARL` conf 1.000, detector
+  366 ms, peak RSS 110 MB. **Smoke B PASS** — jetson-inference under numpy
+  1.19.5 detected the car `(72, 63, 683, 340)`, no SIGILL, no cudaFromNumpy
+  error (the one risk the laptop couldn't test is CLEARED). Full offline
+  suite **128 passed**. REMAINING (student, needs sudo + browser): Step 5
+  offline E2E (fake cam → MMM8748 with zero internet), Step 6 systemd
+  restart + RAM check, then Step 7 (laptop) opens the validation window.
+  Jetson currently at 192.168.0.188; sudo needs a password (interactive).
