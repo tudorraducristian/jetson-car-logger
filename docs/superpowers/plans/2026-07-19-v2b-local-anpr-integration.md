@@ -2264,3 +2264,19 @@ demo video is still owed.
   offline E2E (fake cam → MMM8748 with zero internet), Step 6 systemd
   restart + RAM check, then Step 7 (laptop) opens the validation window.
   Jetson currently at 192.168.0.188; sudo needs a password (interactive).
+- **Task 10 — Step 5 E2E blocker FOUND + fixed (2026-07-19):** the offline
+  E2E crashed at startup — `TypeError: __init__() got an unexpected keyword
+  argument 'stale_after_s'`. Root cause: the throwaway harness
+  `~/e2e_fake_cam.py` (home dir, NOT in the repo) has an OLD `FakeCamera`
+  constructor `__init__(self, device_index=0)`; the real `CameraWorker`
+  grew `stale_after_s`/`reopen_backoff_s` on 2026-07-15 (camera
+  self-healing) and `main._startup` passes them → the fake stand-in
+  couldn't take them → startup failed → nothing on :8000 → "dashboard
+  down". Interface drift between the fake and the real class; NOT app
+  code. Fix: `FakeCamera.__init__(self, device_index=0, **kwargs)` (on the
+  Jetson only, `.bak` kept). VERIFIED after fix: dashboard HTTP 200, ONNX
+  engines load in the real app for the first time, and event id 37 read
+  **`MMM8748` conf 0.9997 status=success with the internet route deleted**
+  — v2's offline read proven at the data level. Older DB rows (v1-era,
+  some `throttled`) are historical clutter. REMAINING: student eyeballs
+  the browser + toggle, then Step 6 (systemd) + Step 7 (open the window).
