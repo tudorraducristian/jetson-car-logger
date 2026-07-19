@@ -18,3 +18,5 @@ pytest-asyncio==0.16.0       # async test support
 requests==2.27.1             # needed by fastapi TestClient (last 3.6 release)
 async-exit-stack==1.0.1      # py3.6 backport: FastAPI yield-dependencies (get_db)
 async-generator==1.10        # py3.6 backport: FastAPI yield-dependencies (get_db)
+onnxruntime==1.9.0           # v2 local ANPR — LAST cp36 aarch64 wheel (opset<=15); CPU provider only
+numpy==1.19.5                # pulled by onnxruntime; on Tegra X1 needs OPENBLAS_CORETYPE=ARMV8 or it SIGILLs

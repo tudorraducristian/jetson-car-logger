@@ -15,6 +15,9 @@ Environment=PATH=/home/tudor/jetson-car-logger/venv/bin:/usr/bin:/bin
 # stdout goes to a journald pipe, not a tty: without this Python block-buffers
 # it and the JSON logs would reach journalctl late (or never, on a crash).
 Environment=PYTHONUNBUFFERED=1
+# numpy>=1.19.5 wheels crash (SIGILL) on the Tegra X1 without this
+# (Stage A Task 9 spike finding).
+Environment=OPENBLAS_CORETYPE=ARMV8
 
 [Install]
 WantedBy=multi-user.target
