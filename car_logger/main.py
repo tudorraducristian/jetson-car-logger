@@ -21,7 +21,7 @@ from car_logger import repositories, schemas
 configure_logging(settings.log_level)
 log = get_logger("car_logger")
 
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.6.0"
 
 PLATES_DIR = "data/plates"
 CROP_RETENTION_DAYS = 30  # student decision: old crops are disk noise after a month
@@ -121,9 +121,11 @@ def _startup():
     from car_logger.services.detector import Detector
     from car_logger.services.tracker import IoUTracker
     from car_logger.services.pipeline import PipelineWorker
-    from car_logger.services.anpr_client import AnprClient
+    from car_logger.services.local_anpr import LocalAnprClient
+    from car_logger.services.onnx_engines import (OnnxPlateDetector,
+                                                  OnnxPlateOcr)
     from car_logger.services.anpr_worker import AnprWorker
-    from car_logger.services.cropping import crop_to_jpeg
+    from car_logger.services.crop_collector import CropCollector
 
     camera = CameraWorker(
         device_index=settings.camera_index,
@@ -132,9 +134,32 @@ def _startup():
     )
     camera.start()
 
-    anpr_client = AnprClient(settings.anpr_api_url, settings.anpr_api_key)
+    # v2: fully local ANPR — models load ONCE here, never per crop.
+    anpr_client = LocalAnprClient(
+        OnnxPlateDetector(settings.anpr_detector_model_path,
+                          threshold=settings.plate_detection_threshold),
+        OnnxPlateOcr(settings.anpr_ocr_model_path,
+                     settings.anpr_ocr_config_path))
     anpr_worker = AnprWorker(anpr_client, _make_on_result(app.state.broker))
     anpr_worker.start()
+
+    def submit_crops(event_id, crops):
+        # collector says a car's crop list is complete -> one queued job
+        if anpr_worker.submit(event_id, crops):
+            return
+        db2 = SessionLocal()
+        try:
+            repositories.update_event_anpr(
+                db2, event_id, None, None, "skipped", None,
+            )
+        finally:
+            db2.close()
+        app.state.broker.publish("updated")
+
+    collector = CropCollector(
+        submit_crops,
+        reads_per_track=settings.anpr_reads_per_track,
+        spacing_s=settings.anpr_read_spacing_s)
 
     def on_confirmed(track, frame):
         # 1) persist a pending event to get its id
@@ -149,18 +174,8 @@ def _startup():
         finally:
             db.close()
         app.state.broker.publish("created")
-        # 2) crop and hand off to ANPR — pipeline does NOT wait for the network
-        crop_bytes = crop_to_jpeg(frame, track.box)
-        submitted = anpr_worker.submit(event_id, crop_bytes)
-        if not submitted:
-            db2 = SessionLocal()
-            try:
-                repositories.update_event_anpr(
-                    db2, event_id, None, None, "skipped", None,
-                )
-            finally:
-                db2.close()
-            app.state.broker.publish("updated")
+        # 2) crop #1 now; the collector gathers the rest across frames
+        collector.start(track.track_id, event_id, track.box, frame)
 
     pipeline = PipelineWorker(
         camera=camera,
@@ -168,19 +183,28 @@ def _startup():
         tracker=IoUTracker(),
         on_confirmed=on_confirmed,
         target_fps=settings.max_pipeline_fps,
+        collector=collector,
     )
     pipeline.start()
     app.state.camera = camera
     app.state.pipeline = pipeline
+    app.state.crop_collector = collector
     app.state.anpr_worker = anpr_worker
     log.info("pipeline_started", target_fps=settings.max_pipeline_fps)
 
 
 @app.on_event("shutdown")
 def _shutdown():
-    # Stop order matters: pipeline first (no new submits), then the ANPR
-    # worker, then the camera it was reading from.
-    for name in ("pipeline", "anpr_worker", "camera"):
+    # Stop order matters: pipeline first (no new submits), then flush the
+    # collector's partial collections into the queue (they drain as
+    # 'skipped'), then the ANPR worker, then the camera it read from.
+    pipeline = getattr(app.state, "pipeline", None)
+    if pipeline is not None:
+        pipeline.stop()
+    collector = getattr(app.state, "crop_collector", None)
+    if collector is not None:
+        collector.drain()
+    for name in ("anpr_worker", "camera"):
         worker = getattr(app.state, name, None)
         if worker is not None:
             worker.stop()

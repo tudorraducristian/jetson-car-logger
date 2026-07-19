@@ -1,8 +1,9 @@
 """Pipeline worker: camera -> detector -> tracker -> on_confirmed callback.
 
-on_confirmed(track, frame) is called once per newly-confirmed track, with the
-frame it was confirmed on (so the caller can crop the plate). The callback owns
-persistence and ANPR submission; the pipeline stays CV-only."""
+on_confirmed(track, frame) is called once per newly-confirmed track, with
+the frame it was confirmed on. The callback owns persistence and starts
+the crop collection; the collector (v2) is then ticked every frame to
+gather the remaining spaced crops. The pipeline stays CV-only."""
 
 import logging
 import threading
@@ -12,11 +13,13 @@ log = logging.getLogger(__name__)
 
 
 class PipelineWorker(object):
-    def __init__(self, camera, detector, tracker, on_confirmed, target_fps=15):
+    def __init__(self, camera, detector, tracker, on_confirmed,
+                 target_fps=15, collector=None):
         self.camera = camera
         self.detector = detector
         self.tracker = tracker
         self.on_confirmed = on_confirmed
+        self.collector = collector
         self._min_interval = 1.0 / float(target_fps)
         self._running = False
         self._thread = None
@@ -48,10 +51,12 @@ class PipelineWorker(object):
             return
         detections = self.detector.detect(frame)
         boxes = [(d.x1, d.y1, d.x2, d.y2) for d in detections]
-        self.tracker.update(boxes)
+        tracks = self.tracker.update(boxes)
         for track in self.tracker.new_confirmed_tracks():
             self.last_event_at = time.time()
             self.on_confirmed(track, frame)
+        if self.collector is not None:
+            self.collector.tick(tracks, frame)
         self.frames_processed += 1
         elapsed = time.time() - t0
         if elapsed > 0:
