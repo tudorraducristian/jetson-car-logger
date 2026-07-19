@@ -1963,7 +1963,7 @@ no SIGILL, no cudaFromNumpy error. **If this fails, STOP the task and
 debug (student-led) before anything goes live: this is the one risk the
 laptop cannot test.**
 
-- [ ] **Step 5: Full suite + E2E with the fake camera, OFFLINE**
+- [x] **Step 5: Full suite + E2E with the fake camera, OFFLINE**
 
 Run (JETSON):
 ```bash
@@ -1981,7 +1981,7 @@ sudo ip route add default via 192.168.0.1 dev eth0
 ```
 (Ctrl+C the fake cam first.)
 
-- [ ] **Step 6: Install the new unit + start the real service**
+- [x] **Step 6: Install the new unit + start the real service**
 
 Run (JETSON):
 ```bash
@@ -2278,5 +2278,17 @@ demo video is still owed.
   engines load in the real app for the first time, and event id 37 read
   **`MMM8748` conf 0.9997 status=success with the internet route deleted**
   — v2's offline read proven at the data level. Older DB rows (v1-era,
-  some `throttled`) are historical clutter. REMAINING: student eyeballs
-  the browser + toggle, then Step 6 (systemd) + Step 7 (open the window).
+  some `throttled`) are historical clutter.
+- **Task 10 — Steps 5 & 6 DONE (2026-07-19):** offline E2E confirmed in
+  the browser — MMM8748 read twice (#37/#38), badge citită, 99% conf, with
+  internet cut. Real systemd service: `active (running)`, `pipeline_started`
+  (target_fps 15) at 17:04:42, ONNX engines loaded clean in the real
+  service (first time), RAM 2.1G/3.9G (< 3G budget), stats partial HTTP 200
+  (tiles render). Two harness-only notes, NOT app bugs: the 3 stats tiles
+  were blank ONLY in the fake-cam E2E because `FakeCamera` also lacks
+  `is_healthy()` (same interface drift; real CameraWorker has it).
+  OPEN ISSUE for Step 7: the real USB camera won't open (`V4L: can't open
+  camera by index 0`) — the appliance runs, but the 5-day validation
+  window needs a live camera seeing real cars, and the 8th-floor angle is
+  a known problem. Step 7 (open the window) HELD pending the student's call
+  on the camera / validation approach.
