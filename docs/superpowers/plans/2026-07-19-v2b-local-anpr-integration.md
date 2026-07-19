@@ -268,7 +268,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   Task 4's `read_plate_multi` uses `winner_index` to pick the evidence
   crop.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/unit/test_plate_voting.py`:
 
@@ -358,12 +358,12 @@ def test_verdict_region_comes_from_the_winning_read():
     assert result.region == "ro"
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_plate_voting.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'car_logger.services.plate_voting'`.
 
-- [ ] **Step 3: Implement `car_logger/services/plate_voting.py`**
+- [x] **Step 3: Implement `car_logger/services/plate_voting.py`**
 
 ```python
 """Multi-frame vote: N reads of one track -> one verdict. Pure function.
@@ -413,12 +413,12 @@ def vote_on_reads(reads):
     return (PlateResult(None, None, "failed", None), 0)
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_plate_voting.py -v`
 Expected: 12 passed. Then full suite: `venv/bin/pytest -q` → 103 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/plate_voting.py tests/unit/test_plate_voting.py
@@ -2198,4 +2198,11 @@ demo video is still owed.
 - **Task 2 DONE (2026-07-19):** `PlateResult` lives in
   `services/plate_result.py`; cloud client re-exports, worker imports the
   new home. Jetson checkpoint: **91 passed** (pure refactor). Commit
-  `2acd9b7`. **Next: Task 3** (plate_voting, TDD — RED first).
+  `2acd9b7`.
+- **Task 3 DONE (2026-07-19):** vote_on_reads implemented TDD — RED
+  proven on the Jetson (collection error, module missing, commit
+  `bfa9339`), then GREEN: **11 passed** + full suite **102 passed**
+  (commit `2393371`). NOTE: the plan's expected counts were off by one —
+  its own test file has 11 tests, not 12; every later "full suite"
+  target shifts by −1 (Task 4: 110, T5: 117, T6: 122, T7: 123, T8: 126,
+  T9/T10: 128). **Next: Task 4** (LocalAnprClient, TDD).
