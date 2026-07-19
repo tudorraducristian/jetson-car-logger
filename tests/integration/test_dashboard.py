@@ -58,9 +58,12 @@ def test_event_detail_empty_placeholder(client):
 
 
 def test_fresh_event_row_is_marked_new(client):
-    # created "now" -> inside the freshness window -> animated entrance
+    # created "now" -> inside the freshness window -> animated entrance.
+    # filter=all: freshness is orthogonal to the v2 read-only default, and
+    # a just-posted event is still 'pending' (no plate read yet), so the
+    # default feed would hide it — the "all" view is where it belongs.
     client.post("/api/events", json={"plate_text": "NEW111"})
-    resp = client.get("/partials/events-feed")
+    resp = client.get("/partials/events-feed?filter=all")
     assert resp.status_code == 200
     assert "row-new" in resp.text
 
@@ -73,7 +76,10 @@ def test_old_event_row_is_not_marked_new(client, db_session):
     db_session.add(Event(timestamp=datetime.utcnow() - timedelta(minutes=5),
                          anpr_status="pending"))
     db_session.commit()
-    resp = client.get("/partials/events-feed")
+    # filter=all so the event is actually in the feed — otherwise the
+    # read-only default would hide it and this test would pass vacuously,
+    # proving nothing about the freshness window.
+    resp = client.get("/partials/events-feed?filter=all")
     assert resp.status_code == 200
     assert "row-new" not in resp.text
 
