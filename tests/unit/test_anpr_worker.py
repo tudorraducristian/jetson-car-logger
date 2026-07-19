@@ -1,6 +1,9 @@
 """The worker thread must survive ANY exception — a dead thread means every
 later event stays 'pending' forever, silently. Found in the stage 4 offline
-test. Results are polled with a deadline (no fixed sleeps) to avoid races."""
+test. Results are polled with a deadline (no fixed sleeps) to avoid races.
+
+v2 (Stage B): a job is (event_id, [crops]) — one job per car — and the
+client call is read_plate_multi, which returns (result, evidence_crop)."""
 
 import time
 
@@ -22,11 +25,11 @@ class FlakyClient(object):
     def __init__(self):
         self.calls = 0
 
-    def read_plate(self, crop_bytes):
+    def read_plate_multi(self, crops):
         self.calls += 1
         if self.calls == 1:
             raise RuntimeError("boom")
-        return ("OK", 0.9, "success")
+        return ("OK", 0.9, "success"), crops[0]
 
     def close(self):
         pass
@@ -36,8 +39,8 @@ def test_worker_survives_client_exception():
     got = []
     worker = AnprWorker(FlakyClient(), lambda eid, r, c: got.append((eid, r)))
     worker.start()
-    worker.submit(1, b"a")
-    worker.submit(2, b"b")
+    worker.submit(1, [b"a1", b"a2"])
+    worker.submit(2, [b"b1"])
     assert _wait_for(lambda: len(got) == 2), "thread died after the exception"
     worker.stop()
     # job 1: the client blew up -> the event still gets a 'failed' result
@@ -48,8 +51,8 @@ def test_worker_survives_client_exception():
 
 
 class OkClient(object):
-    def read_plate(self, crop_bytes):
-        return ("OK", 0.9, "success")
+    def read_plate_multi(self, crops):
+        return ("OK", 0.9, "success"), crops[0]
 
     def close(self):
         pass
@@ -65,11 +68,21 @@ def test_worker_survives_callback_exception():
 
     worker = AnprWorker(OkClient(), bad_then_good)
     worker.start()
-    worker.submit(1, b"a")
-    worker.submit(2, b"b")
+    worker.submit(1, [b"a"])
+    worker.submit(2, [b"b"])
     assert _wait_for(lambda: len(seen) == 2), "thread died in the callback"
     worker.stop()
     assert seen == [1, 2]
+
+
+def test_worker_passes_the_evidence_crop_to_the_callback():
+    got = []
+    worker = AnprWorker(OkClient(), lambda eid, r, c: got.append(c))
+    worker.start()
+    worker.submit(1, [b"first", b"second"])
+    assert _wait_for(lambda: len(got) == 1)
+    worker.stop()
+    assert got[0] == b"first"  # OkClient returns crops[0] as evidence
 
 
 def test_stop_drains_pending_jobs_as_skipped_and_closes_client():
@@ -87,8 +100,8 @@ def test_stop_drains_pending_jobs_as_skipped_and_closes_client():
     client = ClosableClient()
     worker = AnprWorker(
         client, lambda eid, res, crop: calls.append((eid, res.status)))
-    worker.submit(1, b"a")
-    worker.submit(2, b"b")
+    worker.submit(1, [b"a"])
+    worker.submit(2, [b"b"])
     worker.stop()  # never started: everything is still queued
     assert calls == [(1, "skipped"), (2, "skipped")]
     assert client.closed is True
