@@ -13,15 +13,11 @@ STUDENT DECISIONS (confirmed 2026-07-07):
 """
 
 import time
-from collections import namedtuple
 
 import httpx
 
+from car_logger.services.plate_result import PlateResult  # noqa: F401 (re-export: v1 call sites import it from here)
 from car_logger.services.plate_rules import normalize_plate
-
-PlateResult = namedtuple(
-    "PlateResult", ["plate_text", "confidence", "status", "region"]
-)  # status: success | failed | throttled | skipped
 
 
 class AnprClient(object):

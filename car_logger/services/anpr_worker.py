@@ -10,7 +10,7 @@ import logging
 import queue
 import threading
 
-from car_logger.services.anpr_client import PlateResult
+from car_logger.services.plate_result import PlateResult
 
 log = logging.getLogger(__name__)
 
