@@ -698,7 +698,7 @@ in Task 10's smoke test.
   duck-types; pure helpers `best_detection`, `decode_ocr_outputs`,
   `region_to_code`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/unit/test_onnx_engines.py`:
 
@@ -769,12 +769,12 @@ def test_region_to_code_student_mapping():
     assert region_to_code("Czech Republic") == "czech republic"
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_onnx_engines.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'car_logger.services.onnx_engines'`.
 
-- [ ] **Step 3: Implement `car_logger/services/onnx_engines.py`**
+- [x] **Step 3: Implement `car_logger/services/onnx_engines.py`**
 
 ```python
 """ONNX engines for the local ANPR: YOLO plate detector + CCT OCR.
@@ -921,12 +921,12 @@ class OnnxPlateOcr(object):
         self._session = None
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_onnx_engines.py -v`
 Expected: 7 passed. Full suite: 118 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/onnx_engines.py tests/unit/test_onnx_engines.py
@@ -2212,3 +2212,10 @@ demo video is still owed.
   read behind the v1 contract, never-raises, OCR only after a detected
   plate, read_plate_multi returns the winning crop as evidence. **Next:
   Task 5** (onnx_engines, TDD on the pure decode helpers).
+- **Task 5 DONE (2026-07-19):** onnx_engines implemented TDD — RED on the
+  Jetson (collection error, commit `5bf5d84`), then GREEN: **7 passed** +
+  full suite **117 passed** (commit `ae47dac`). Pure decode helpers
+  (best_detection / decode_ocr_outputs / region_to_code) are unit-tested;
+  the real OnnxPlateDetector + OnnxPlateOcr import ORT lazily and are
+  exercised live only in Task 10's smoke test. **Next: Task 6**
+  (CropCollector, TDD).
