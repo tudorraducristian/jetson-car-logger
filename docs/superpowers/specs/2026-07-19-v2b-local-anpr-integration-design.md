@@ -86,6 +86,22 @@ car, so the bounded queue and drop policy are untouched).
 Untouched: tracker, capture, broker/SSE, repositories, `on_result`, DB
 schema.
 
+Implementation notes carried from Stage A (facts, not choices):
+
+- **`PlateResult` moves to a neutral module** (it currently lives in
+  `anpr_client.py`, and `anpr_worker.py` imports it from there — the
+  cleanup commit can't delete the cloud client while the worker still
+  imports from it). Move first, delete later.
+- `read_plate` receives JPEG bytes (unchanged contract) →
+  `cv2.imdecode` happens inside `LocalAnprClient`.
+- Detector output is `(1, 7)` = `[img_id, x1, y1, x2, y2, class,
+  score]` in 384×384 plain-resize space — coordinates scale back to
+  crop space; the OCR needs the **tight** detector crop (whole frames
+  produce garbage — spike finding).
+- The OCR's region head predicts country **names** (66 classes incl.
+  "Unknown"): "Romania" → `"ro"`; other countries → lowercased name,
+  kept in DB/UI as information.
+
 Full flow: track confirmed → `pending` event in DB (+ SSE) → collector
 gathers up to 3 crops (~1 s) → one queue job → worker: stage-1 plate
 detection per crop, OCR only where a plate was found → vote → one
@@ -194,9 +210,17 @@ Integration (TestClient): `?filter=read` returns only `success`;
 `?filter=all` returns everything; default route uses the plate-read
 filter; the `fără plăcuță` badge renders.
 
-Jetson smoke test before the window opens: the Task 9 spike script,
-repurposed — the `models/anpr/` files load on ORT 1.9 and read the
-known `CJ45ARL` crop correctly.
+Jetson smoke tests before the window opens:
+
+1. The Task 9 spike script, repurposed — the `models/anpr/` files load
+   on ORT 1.9 and read the known `CJ45ARL` crop correctly **inside the
+   app's venv** (the spike ran in a separate venv).
+2. **jetson-inference under the new numpy:** installing
+   `onnxruntime==1.9.0` pulls numpy 1.19.5 into the app venv,
+   shadowing the system numpy 1.13 that `cudaFromNumpy` has been
+   running against — detector + a full pipeline tick must be
+   smoke-tested before the window opens (known risk from the Stage B
+   brainstorm, never yet tested together).
 
 ## Success criteria
 
