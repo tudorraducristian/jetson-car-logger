@@ -1400,7 +1400,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Produces: `list_events(db, skip, limit, plate_text, only_read=False)`;
   `GET /partials/events-feed?filter=read|all&q=...` (default `read`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/unit/test_repositories.py`:
 
@@ -1454,13 +1454,13 @@ def test_feed_filter_all_shows_everything_with_the_new_badge(client,
     assert "fără plăcuță" in response.text
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_repositories.py tests/integration/test_dashboard.py -v`
 Expected: the three new tests FAIL (`only_read` unexpected keyword; the
 default feed still shows the no_plate event; badge text missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `repositories.py` — `list_events` becomes:
 
@@ -1565,12 +1565,12 @@ radio state, and `hx-include="#feed-controls input"` makes every refresh
     # throttled (throttled: historical rows only — the v1 cloud rate limit)
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_repositories.py tests/integration/test_dashboard.py -v`
 Expected: all pass. Full suite: 127 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/repositories.py car_logger/api/routes_dashboard.py car_logger/templates/partials/macros.html car_logger/templates/dashboard.html car_logger/models.py tests/unit/test_repositories.py tests/integration/test_dashboard.py
@@ -2232,3 +2232,12 @@ demo video is still owed.
   now (event_id, [crops]) → read_plate_multi → (verdict, evidence);
   queue/drop/drain semantics unchanged. **Next: Task 8** (dashboard filter
   + no_plate badge, TDD — first UI/template task).
+- **Task 8 DONE (2026-07-19):** dashboard filter + no_plate badge, TDD —
+  RED on the Jetson (2 failed, commit `aa48570`), implemented (commit
+  `1477c9a`). REGRESSION caught at the GREEN checkpoint:
+  `test_fresh_event_row_is_marked_new` posted a 'pending' event the new
+  read-only default now hides. Student chose variant A — freshness tests
+  moved to `?filter=all` (its vacuously-passing twin fixed too, commit
+  `1d9bfaf`). Full suite **126 passed**. **Next: Task 9** (config + wiring
+  in main.py — the local engine goes live; last laptop-side task before
+  the Jetson deploy).
