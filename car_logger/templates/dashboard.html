@@ -30,17 +30,39 @@
     <section aria-label="Evenimente recente" class="lg:col-span-7">
       <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
         <h2 class="font-display text-2xl font-medium">Evenimente</h2>
-        <input type="search" name="q" placeholder="caut&#259; dup&#259; plac&#259;&#8230;"
-               class="w-48 rounded border border-ink-700 bg-ink-900 px-3 py-1.5
-                      font-mono text-xs text-paper placeholder-paper-faint
-                      focus:border-gold focus:outline-none"
-               hx-get="/partials/events-feed" hx-target="#events-feed"
-               hx-trigger="input changed delay:300ms" hx-include="this">
+        <div id="feed-controls" class="flex flex-wrap items-center gap-3">
+          {# The toggle: student decision 2026-07-19 — filter in the UI,
+             not in the data. "Toate" is the validation-window audit view. #}
+          <fieldset class="flex items-center gap-3 rounded border border-ink-700 px-3 py-1.5 font-mono text-[11px] text-paper-dim">
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input type="radio" name="filter" value="read" checked
+                     class="accent-gold"
+                     hx-get="/partials/events-feed" hx-target="#events-feed"
+                     hx-trigger="change" hx-include="#feed-controls input">
+              Cu plăcuță
+            </label>
+            <label class="flex cursor-pointer items-center gap-1.5">
+              <input type="radio" name="filter" value="all"
+                     class="accent-gold"
+                     hx-get="/partials/events-feed" hx-target="#events-feed"
+                     hx-trigger="change" hx-include="#feed-controls input">
+              Toate
+            </label>
+          </fieldset>
+          <input type="search" name="q" placeholder="caut&#259; dup&#259; plac&#259;&#8230;"
+                 class="w-48 rounded border border-ink-700 bg-ink-900 px-3 py-1.5
+                        font-mono text-xs text-paper placeholder-paper-faint
+                        focus:border-gold focus:outline-none"
+                 hx-get="/partials/events-feed" hx-target="#events-feed"
+                 hx-trigger="input changed delay:300ms"
+                 hx-include="#feed-controls input">
+        </div>
       </div>
       <div id="events-feed"
            hx-get="/partials/events-feed"
            hx-trigger="load, sse:new_event"
            hx-swap="innerHTML"
+           hx-include="#feed-controls input"
            class="min-h-[16rem]">
       </div>
     </section>

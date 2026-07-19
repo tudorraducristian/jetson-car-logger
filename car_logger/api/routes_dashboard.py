@@ -48,9 +48,15 @@ def dashboard(request: Request):
 
 
 @router.get("/partials/events-feed")
-def events_feed(request: Request, q: str = "", db: Session = Depends(get_db)):
-    """Feed fragment, newest first; `q` filters by plate substring."""
-    events = repositories.list_events(db, limit=15, plate_text=(q or None))
+def events_feed(request: Request, q: str = "", filter: str = "read",
+                db: Session = Depends(get_db)):
+    """Feed fragment, newest first; `q` filters by plate substring.
+
+    `filter` is the dashboard toggle: "read" (default) shows only
+    plate-read events; "all" shows everything — the audit view for the
+    Stage B validation window."""
+    events = repositories.list_events(db, limit=15, plate_text=(q or None),
+                                      only_read=(filter != "all"))
     fresh_cutoff = datetime.utcnow() - timedelta(seconds=FRESH_ROW_SECONDS)
     return templates.TemplateResponse(
         "partials/events_feed.html",

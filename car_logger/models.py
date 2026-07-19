@@ -41,7 +41,8 @@ class Event(Base):
     # region code the ANPR API detected for the plate ("ro", "cz"…) — used
     # by the identity gate and shown in the detail drawer.
     region = Column(String, nullable=True)
-    # anpr_status: pending | success | failed | skipped | throttled
+    # anpr_status: pending | success | failed | no_plate | skipped |
+    # throttled (throttled: historical rows only — the v1 cloud rate limit)
     anpr_status = Column(String, nullable=False, default="pending")
     bbox_json = Column(Text, nullable=True)
     image_path = Column(String, nullable=True)

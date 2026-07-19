@@ -16,6 +16,8 @@
     {%- set dot, label, cls = 'bg-emerald-400', 'citită', 'text-emerald-300 border-emerald-400/30' -%}
   {%- elif status == 'pending' -%}
     {%- set dot, label, cls = 'bg-gold', 'în așteptare', 'text-gold border-gold/30' -%}
+  {%- elif status == 'no_plate' -%}
+    {%- set dot, label, cls = 'bg-paper-faint', 'fără plăcuță', 'text-paper-dim border-paper-faint/30' -%}
   {%- elif status == 'failed' -%}
     {%- set dot, label, cls = 'bg-rose-400', 'eșuat', 'text-rose-300 border-rose-400/30' -%}
   {%- elif status == 'throttled' -%}

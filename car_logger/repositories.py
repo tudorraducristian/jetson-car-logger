@@ -31,12 +31,19 @@ def get_event(db: Session, event_id: int) -> Optional[Event]:
 
 
 def list_events(db: Session, skip: int = 0, limit: int = 50,
-                plate_text: Optional[str] = None) -> List[Event]:
-    """Newest-first page of events; optional plate substring filter."""
+                plate_text: Optional[str] = None,
+                only_read: bool = False) -> List[Event]:
+    """Newest-first page of events; optional plate substring filter.
+
+    only_read narrows to plate-read events (anpr_status == "success") —
+    the dashboard's default view since v2 (student decision 2026-07-19:
+    filter in the UI, not in the data; everything stays persisted)."""
     capped = min(limit, MAX_LIST_LIMIT)
     query = db.query(Event)
     if plate_text:
         query = query.filter(Event.plate_text.like("%" + plate_text + "%"))
+    if only_read:
+        query = query.filter(Event.anpr_status == "success")
     return (query.order_by(Event.timestamp.desc(), Event.id.desc())
                  .offset(skip)
                  .limit(capped)
