@@ -76,3 +76,31 @@ def test_old_event_row_is_not_marked_new(client, db_session):
     resp = client.get("/partials/events-feed")
     assert resp.status_code == 200
     assert "row-new" not in resp.text
+
+
+def _seed_read_and_no_plate_events(db_session):
+    from car_logger import repositories, schemas
+    read = repositories.create_event(
+        db_session, schemas.EventCreate(anpr_status="pending"))
+    repositories.update_event_anpr(
+        db_session, read.id, "CJ45ARL", 0.97, "success", None)
+    unread = repositories.create_event(
+        db_session, schemas.EventCreate(anpr_status="pending"))
+    repositories.update_event_anpr(
+        db_session, unread.id, None, None, "no_plate", None)
+
+
+def test_feed_default_shows_only_plate_read_events(client, db_session):
+    _seed_read_and_no_plate_events(db_session)
+    response = client.get("/partials/events-feed")
+    assert response.status_code == 200
+    assert "CJ45ARL" in response.text
+    assert "fără plăcuță" not in response.text
+
+
+def test_feed_filter_all_shows_everything_with_the_new_badge(client,
+                                                             db_session):
+    _seed_read_and_no_plate_events(db_session)
+    response = client.get("/partials/events-feed?filter=all")
+    assert "CJ45ARL" in response.text
+    assert "fără plăcuță" in response.text

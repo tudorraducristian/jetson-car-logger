@@ -74,3 +74,19 @@ def test_event_stats_counts(db_session):
     assert stats["total_events"] == 2
     assert stats["plates_read"] == 1
     assert stats["unique_vehicles"] == 1
+
+
+def test_list_events_only_read_narrows_to_success(db_session):
+    from car_logger import repositories, schemas
+    read = repositories.create_event(
+        db_session, schemas.EventCreate(anpr_status="pending"))
+    repositories.update_event_anpr(
+        db_session, read.id, "CJ45ARL", 0.97, "success", None)
+    unread = repositories.create_event(
+        db_session, schemas.EventCreate(anpr_status="pending"))
+    repositories.update_event_anpr(
+        db_session, unread.id, None, None, "no_plate", None)
+
+    assert len(repositories.list_events(db_session)) == 2
+    only_read = repositories.list_events(db_session, only_read=True)
+    assert [e.plate_text for e in only_read] == ["CJ45ARL"]
