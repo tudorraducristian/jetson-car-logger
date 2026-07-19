@@ -956,7 +956,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   `on_complete(event_id, crops_list)` fires exactly once per event.
   Task 9 wires `start` into `on_confirmed` and `tick` into the pipeline.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/unit/test_crop_collector.py`:
 
@@ -1062,12 +1062,12 @@ def test_single_read_config_completes_immediately():
     assert calls == [(42, [("f0", (0, 0, 10, 10))])]
 ```
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_crop_collector.py -v`
 Expected: FAIL — `ModuleNotFoundError`.
 
-- [ ] **Step 3: Implement `car_logger/services/crop_collector.py`**
+- [x] **Step 3: Implement `car_logger/services/crop_collector.py`**
 
 ```python
 """Per-track crop collection for the multi-frame vote (Stage B spec,
@@ -1140,12 +1140,12 @@ class CropCollector(object):
             self._on_complete(collection.event_id, collection.crops)
 ```
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest tests/unit/test_crop_collector.py -v`
 Expected: 5 passed. Full suite: 123 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/crop_collector.py tests/unit/test_crop_collector.py
@@ -2219,3 +2219,9 @@ demo video is still owed.
   the real OnnxPlateDetector + OnnxPlateOcr import ORT lazily and are
   exercised live only in Task 10's smoke test. **Next: Task 6**
   (CropCollector, TDD).
+- **Task 6 DONE (2026-07-19):** CropCollector implemented TDD — RED on the
+  Jetson (collection error, commit `9ff30c7`), then GREEN: **5 passed** +
+  full suite **122 passed** (commit `b2dd55e`). Per-track dict, crop #1 at
+  confirmation + spaced follow-ups, track-death handover, stale-box skip,
+  drain() at shutdown; injectable clock + crop_fn. **Next: Task 7**
+  (AnprWorker speaks crop lists — modifies existing worker + its tests).
