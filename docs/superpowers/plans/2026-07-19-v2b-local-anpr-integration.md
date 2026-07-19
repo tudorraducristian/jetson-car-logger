@@ -195,7 +195,7 @@ The namedtuple lives in `anpr_client.py`, which Task 11 deletes;
   every later task imports it from here. Fields unchanged:
   `(plate_text, confidence, status, region)`.
 
-- [ ] **Step 1: Create `car_logger/services/plate_result.py`**
+- [x] **Step 1: Create `car_logger/services/plate_result.py`**
 
 ```python
 """The one result type every ANPR engine speaks.
@@ -211,7 +211,7 @@ PlateResult = namedtuple(
 )  # status: success | failed | no_plate | throttled | skipped
 ```
 
-- [ ] **Step 2: Re-export from `anpr_client.py`**
+- [x] **Step 2: Re-export from `anpr_client.py`**
 
 Replace lines 15-24 (the `time`/`namedtuple` imports and the namedtuple
 definition) so the top of the file reads:
@@ -225,7 +225,7 @@ from car_logger.services.plate_result import PlateResult  # noqa: F401 (re-expor
 from car_logger.services.plate_rules import normalize_plate
 ```
 
-- [ ] **Step 3: Point the worker at the new home**
+- [x] **Step 3: Point the worker at the new home**
 
 In `anpr_worker.py` replace
 `from car_logger.services.anpr_client import PlateResult` with:
@@ -234,12 +234,12 @@ In `anpr_worker.py` replace
 from car_logger.services.plate_result import PlateResult
 ```
 
-- [ ] **Step 4: Full suite green (pure refactor — no behavior change)**
+- [x] **Step 4: Full suite green (pure refactor — no behavior change)**
 
 Run (JETSON): `OPENBLAS_CORETYPE=ARMV8 venv/bin/pytest -q`
 Expected: `91 passed`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add car_logger/services/plate_result.py car_logger/services/anpr_client.py car_logger/services/anpr_worker.py
@@ -2194,5 +2194,8 @@ demo video is still owed.
 - **Task 1 DONE (2026-07-19, laptop):** models copied from the Stage A
   caches, detector re-stamped opset 17 → 15, outputs verified
   bit-identical (`True`), README written. Commit `1549452`. Jetson not
-  needed yet. **Next: Task 2** (needs the Jetson on + LAN for the
-  checkpoint).
+  needed yet.
+- **Task 2 DONE (2026-07-19):** `PlateResult` lives in
+  `services/plate_result.py`; cloud client re-exports, worker imports the
+  new home. Jetson checkpoint: **91 passed** (pure refactor). Commit
+  `2acd9b7`. **Next: Task 3** (plate_voting, TDD — RED first).
