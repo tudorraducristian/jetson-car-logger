@@ -41,3 +41,31 @@ def test_pipeline_survives_detector_exception():
     worker.stop()
     assert detector.calls >= 2           # kept calling after the raise
     assert worker.frames_processed >= 1  # processed frames post-exception
+
+
+class NullDetector(object):
+    def detect(self, frame):
+        return []
+
+
+class RecordingCollector(object):
+    def __init__(self):
+        self.ticks = []
+
+    def tick(self, live_tracks, frame):
+        self.ticks.append((list(live_tracks), frame))
+
+
+def test_pipeline_ticks_the_collector_every_frame():
+    collector = RecordingCollector()
+    worker = PipelineWorker(camera=OneFrameCamera(), detector=NullDetector(),
+                            tracker=NullTracker(),
+                            on_confirmed=lambda t, f: None,
+                            target_fps=200, collector=collector)
+    worker.start()
+    deadline = time.time() + 3.0
+    while worker.frames_processed < 1 and time.time() < deadline:
+        time.sleep(0.05)
+    worker.stop()
+    assert len(collector.ticks) >= 1
+    assert collector.ticks[0][1] == "frame"
