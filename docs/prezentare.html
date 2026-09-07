@@ -1,0 +1,405 @@
+<title>Jetson Car Logger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --paper:      #f6f7f8;
+    --surface:    #ffffff;
+    --ink:        #14181f;
+    --ink-2:      #4e5665;
+    --ink-3:      #79818f;
+    --rule:       #d9dde3;
+    --rule-soft:  #e8ebef;
+    --eu:         #12357f;
+    --eu-soft:    #e7ecf7;
+    --signal:     #9a4a12;
+    --signal-soft:#f6ece3;
+    --good:       #1a6242;
+    --band-text:  #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0f1218;
+      --surface:    #161b23;
+      --ink:        #e7eaf0;
+      --ink-2:      #a8b0bd;
+      --ink-3:      #7b8494;
+      --rule:       #2a313d;
+      --rule-soft:  #212832;
+      --eu:         #8fb0ee;
+      --eu-soft:    #1a2337;
+      --signal:     #e0a173;
+      --signal-soft:#2a2119;
+      --good:       #6dc09a;
+      --band-text:  #0f1218;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #0f1218;
+    --surface:    #161b23;
+    --ink:        #e7eaf0;
+    --ink-2:      #a8b0bd;
+    --ink-3:      #7b8494;
+    --rule:       #2a313d;
+    --rule-soft:  #212832;
+    --eu:         #8fb0ee;
+    --eu-soft:    #1a2337;
+    --signal:     #e0a173;
+    --signal-soft:#2a2119;
+    --good:       #6dc09a;
+    --band-text:  #0f1218;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 28px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 38px;
+  }
+
+  h1, h2, h3, .label, .chip, .metric-value, th {
+    font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  }
+  h1 {
+    font-size: 38px;
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+  }
+  p { margin: 0; max-width: 68ch; }
+  .lead { font-size: 17.5px; color: var(--ink-2); }
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.86em; }
+
+  /* ---- masthead: the EU plate band is the one borrowed detail ---- */
+  header { display: flex; flex-direction: column; gap: 16px; }
+  .plate {
+    display: inline-flex;
+    align-items: stretch;
+    align-self: flex-start;
+    border: 2px solid var(--ink);
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .plate .band {
+    background: var(--eu);
+    color: var(--band-text);
+    font-family: Archivo, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 6px 7px;
+    display: flex;
+    align-items: flex-end;
+  }
+  .plate .text {
+    font-family: Archivo, sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.14em;
+    padding: 5px 14px 5px 12px;
+    color: var(--ink);
+  }
+  .sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .sub b { font-family: Archivo, sans-serif; font-weight: 600; color: var(--ink); font-size: 12.5px; }
+
+  section { display: flex; flex-direction: column; gap: 14px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+  .sec-head .label { margin-left: auto; }
+
+  /* ---- metrics ---- */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .metric { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .metric-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .metric-key { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+
+  /* ---- pipeline schema ---- */
+  .device {
+    border: 1.5px solid var(--rule);
+    border-radius: 3px;
+    padding: 14px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .device > .label { color: var(--eu); }
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .node {
+    flex: 1 1 128px;
+    min-width: 128px;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--eu);
+    padding: 9px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .node .n { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--ink-3); }
+  .node .t { font-family: Archivo, sans-serif; font-weight: 600; font-size: 13.5px; line-height: 1.2; }
+  .node .d { font-size: 12px; color: var(--ink-2); line-height: 1.3; }
+  .arrow { align-self: center; color: var(--ink-3); font-size: 15px; }
+  .node.out { border-left-color: var(--ink-3); }
+  .outside { display: flex; gap: 8px; align-items: stretch; }
+
+  /* ---- tables ---- */
+  .tw { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  th { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.win td { background: var(--eu-soft); }
+  tr.win td:first-child { font-weight: 600; }
+
+  /* ---- decision list ---- */
+  .decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .decision { background: var(--surface); padding: 13px 15px; display: flex; flex-direction: column; gap: 5px; }
+  .decision p { font-size: 13.5px; color: var(--ink-2); }
+
+  .note {
+    border-left: 3px solid var(--signal);
+    background: var(--signal-soft);
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  .note b { font-family: Archivo, sans-serif; font-weight: 600; color: var(--signal); }
+
+  ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; }
+  li { font-size: 14.5px; color: var(--ink-2); }
+  li b { color: var(--ink); font-family: Archivo, sans-serif; font-weight: 600; font-size: 13.5px; }
+
+  footer { border-top: 1px solid var(--rule); padding-top: 12px; font-size: 12.5px; color: var(--ink-3); }
+
+  @media (max-width: 620px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 30px; }
+  }
+
+  @media print {
+    :root, :root[data-theme="dark"] {
+      --paper: #ffffff; --surface: #ffffff; --ink: #14181f; --ink-2: #3d4552;
+      --ink-3: #6a7280; --rule: #c9ced6; --rule-soft: #e2e6eb; --eu: #12357f;
+      --eu-soft: #eef2fa; --signal: #8a4210; --signal-soft: #f7f0e9;
+      --good: #1a6242; --band-text: #ffffff;
+    }
+    body { background: #fff; color: var(--ink); }
+    .page { padding: 0; gap: 26px; max-width: none; }
+    section, .device, .metrics, .tw { break-inside: avoid; }
+    .node, .decision { break-inside: avoid; }
+  }
+</style>
+
+<div class="page">
+
+  <header>
+    <span class="plate"><span class="band">RO</span><span class="text">CAR LOG</span></span>
+    <h1>Jetson Car Logger</h1>
+    <p class="lead">Un aparat autonom care detectează mașinile pe stradă, le citește numărul de înmatriculare
+      și le ține evidența &mdash; tot procesarea se face local, pe o placă Jetson Nano de 4 GB. Îl pornești
+      din priză și merge: fără laptop, fără cloud, fără intervenție.</p>
+    <div class="sub">
+      <span><b>PLACĂ</b> Jetson Nano 2019, 4 GB, JetPack 4.6, Python 3.6.9</span>
+      <span><b>STACK</b> FastAPI · SQLAlchemy · SQLite · Jinja2 · htmx · onnxruntime</span>
+      <span><b>REPO</b> <span class="mono">tudorraducristian/jetson-car-logger</span></span>
+    </div>
+  </header>
+
+  <section>
+    <div class="metrics">
+      <div class="metric"><span class="metric-value">128</span><span class="metric-key">teste automate (unit + integrare)</span></div>
+      <div class="metric"><span class="metric-value">~1&nbsp;760</span><span class="metric-key">linii aplicație / ~1&nbsp;530 linii teste</span></div>
+      <div class="metric"><span class="metric-value">93,5%</span><span class="metric-key">acuratețe OCR pe benchmark public</span></div>
+      <div class="metric"><span class="metric-value">0</span><span class="metric-key">dependențe externe în v2 (OCR local)</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Schema sistemului</h2>
+      <span class="label">de la cadru la pagină web</span>
+    </div>
+    <div class="device">
+      <span class="label">Jetson Nano &mdash; tot lanțul rulează on-device</span>
+      <div class="flow">
+        <div class="node"><span class="n">01</span><span class="t">Capture</span><span class="d">fir de execuție separat, ține doar ultimul cadru</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">02</span><span class="t">Detector</span><span class="d">SSD-MobileNet-v2 pe GPU, găsește mașinile</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">03</span><span class="t">Tracker IoU</span><span class="d">o mașină care trece = un eveniment, nu 30</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">04</span><span class="t">Crop collector</span><span class="d">3 decupaje decorelate din același traseu</span></div>
+      </div>
+      <div class="flow">
+        <div class="node"><span class="n">05</span><span class="t">ANPR local</span><span class="d">YOLO-v9-t găsește plăcuța, CCT-XS o citește</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">06</span><span class="t">Vot pe 3 citiri</span><span class="d">2 din 3 identice = acceptat, altfel eșec</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">07</span><span class="t">SQLite</span><span class="d">events + vehicles, migrări Alembic</span></div>
+        <span class="arrow">→</span>
+        <div class="node"><span class="n">08</span><span class="t">FastAPI</span><span class="d">dashboard randat pe server + flux SSE</span></div>
+      </div>
+    </div>
+    <div class="outside">
+      <span class="arrow">→</span>
+      <div class="node out"><span class="n">09</span><span class="t">Browser în rețea</span><span class="d">telefon sau laptop pe <span class="mono">http://jetson:8000</span> &mdash; se actualizează singur, fără refresh</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Deciziile de arhitectură</h2>
+      <span class="label">ce am ales și de ce</span>
+    </div>
+    <div class="decisions">
+      <div class="decision">
+        <h3>Fire de execuție, nu asyncio</h3>
+        <p>OpenCV și TensorRT blochează prin natura lor. Trei fire (cameră, pipeline, ANPR) înseamnă că un cadru lent sau un apel de rețea lent nu îngheață niciodată dashboardul.</p>
+      </div>
+      <div class="decision">
+        <h3>Un singur pod fir&nbsp;→&nbsp;async</h3>
+        <p><span class="mono">EventBroker</span> e singurul loc unde un fir de execuție atinge bucla async, prin <span class="mono">call_soon_threadsafe</span>. O regulă într-un loc, în loc de lacăte împrăștiate.</p>
+      </div>
+      <div class="decision">
+        <h3>Strat de repository</h3>
+        <p>Tot SQL-ul stă în <span class="mono">repositories.py</span>. Rutele HTTP și pipeline-ul scriu ambele evenimente &mdash; fără el, logica s-ar dubla și ar diverge.</p>
+      </div>
+      <div class="decision">
+        <h3>SSE în loc de polling</h3>
+        <p>Dashboardul întreba serverul la 2 secunde (~1800 cereri/oră, aproape toate „nimic nou”). Acum serverul anunță schimbarea, iar htmx re-cere doar fragmentul afectat.</p>
+      </div>
+      <div class="decision">
+        <h3>htmx, nu React</h3>
+        <p>Randare pe server, zero build step, zero npm pe o placă ARM. Interfața e citită, nu operată &mdash; un SPA ar fi dublat codul pentru aceleași șase panouri.</p>
+      </div>
+      <div class="decision">
+        <h3>systemd ca strat de operare</h3>
+        <p>Aplicația nu se demonizează singură: systemd rulează migrările la pornire, o repornește la crash (testat cu SIGKILL) și colectează logurile JSON.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>v2: de la OCR în cloud la OCR local</h2>
+      <span class="label">experiment cu regulă de decizie fixată dinainte</span>
+    </div>
+    <p>Versiunea 1 trimitea decupajul plăcuței către un API extern (Plate Recognizer). Pentru v2 am
+      vrut să scap de dependența externă, așa că am făcut un <b>bake-off măsurat</b>: am scris
+      regula de câștig <em>înainte</em> de a măsura &mdash; câștigă cea mai bună acuratețe exact-match
+      care rulează pe Jetson sub 2 s/decupaj și sub 500 MB RAM adăugat.</p>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Candidat</th><th>Exact match</th><th>CER mediu</th><th>Read rate</th><th>Latență/decupaj</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>OpenALPR (EU)</td><td class="num">26,9%</td><td class="num">0,635</td><td class="num">38,9%</td><td class="num">1092 ms</td></tr>
+          <tr><td>fast-alpr (model EU)</td><td class="num">88,9%</td><td class="num">0,028</td><td class="num">100%</td><td class="num">119 ms</td></tr>
+          <tr class="win"><td>fast-alpr (model global)</td><td class="num">93,5%</td><td class="num">0,011</td><td class="num">100%</td><td class="num">337 ms pe Jetson</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-2)">Benchmark public, N=108. Pe cele 9 decupaje reale din camera mea, modelul global a citit 9 din 9 corect,
+      inclusiv cele 3 capturi live pe care OpenALPR le-a ratat pe toate. Consum pe placă: 110 MB, sub bugetul de 500 MB.</p>
+    <div class="note">
+      <b>Descoperirea care a schimbat designul.</b> Toate cele 7 citiri greșite ale modelului aveau
+      încredere ≥ 0,9997. Adică <em>scorul de încredere nu separă citirile corecte de cele greșite</em> &mdash;
+      un prag pe confidence ar fi fost inutil. Filtrul de eroare a devenit acordul pe mai multe cadre:
+      trei decupaje distanțate din același traseu, iar plăcuța e acceptată doar dacă cel puțin două
+      citiri coincid.
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Cifre măsurate pe placă</h2>
+      <span class="label">nu estimări</span>
+    </div>
+    <div class="tw">
+      <table>
+        <tbody>
+          <tr><td>Detecție (SSD-MobileNet-v2, GPU)</td><td class="num">20&ndash;25 FPS</td></tr>
+          <tr><td>Pipeline complet (detecție + tracking + scriere în DB)</td><td class="num">12&ndash;22 FPS</td></tr>
+          <tr><td>Citire plăcuță, local (detector 305 ms + OCR 32 ms)</td><td class="num">~337 ms</td></tr>
+          <tr><td>Încărcare dashboard</td><td class="num">&lt; 100 ms</td></tr>
+          <tr><td>De la detecție la apariția pe ecran</td><td class="num">~1 s</td></tr>
+          <tr><td>RAM, tot stack-ul</td><td class="num">1,5&ndash;2,2 GB din 4 GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Cum am lucrat</h2>
+      <span class="label">proces</span>
+    </div>
+    <ul>
+      <li><b>TDD pe partea de logică.</b> Fiecare funcție cu reguli reale (votul, tracker-ul, colectorul de decupaje) a pornit de la un test care pica &mdash; se vede în istoricul de commit-uri: <span class="mono">test(...) RED</span> urmat de <span class="mono">feat(...)</span>.</li>
+      <li><b>128 de teste,</b> rulabile pe orice laptop: camera, GPU-ul și rețeaua sunt înlocuite cu duble de test. Ce nu se poate simula (lumina, unghiul, camera reală) se verifică pe placă, la puncte de control explicite.</li>
+      <li><b>Migrări de schemă cu Alembic,</b> rulate automat la pornirea serviciului &mdash; baza de date nu se modifică niciodată manual.</li>
+      <li><b>Secretele stau în <span class="mono">.env</span></b> (ignorat de git), încărcate prin <span class="mono">pydantic.BaseSettings</span>. Nicio cheie de API în repo.</li>
+      <li><b>Deciziile de produs sunt documentate</b> în specificații datate, cu alternativele respinse și motivul &mdash; <span class="mono">docs/architecture.md</span> și <span class="mono">docs/superpowers/specs/</span>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Limite cunoscute și pasul următor</h2>
+      <span class="label">ce nu face încă</span>
+    </div>
+    <ul>
+      <li><b>Fizica nu negociază:</b> citirea plăcuței cere lumină de zi, un unghi rezonabil și o mașină reală. Un unghi de sus înfrânge și detectorul, și OCR-ul.</li>
+      <li><b>Repornire zilnică la 04:00</b> &mdash; paliativ documentat pentru fragmentarea de memorie a unui proces CPython care rulează săptămâni. E o soluție de compromis, nu o reparație.</li>
+      <li><b>Fără autentificare,</b> prin design: aparat cu un singur utilizator, în rețeaua locală. Nu se expune pe internet.</li>
+      <li><b>Python 3.6 blochează tot stack-ul</b> la ultima generație compatibilă (FastAPI 0.67, Pydantic v1, SQLAlchemy 1.3). Orice upgrade se testează întâi pe placă.</li>
+      <li><b>Urmează:</b> fereastră de validare pe teren (minimum 5 zile, 15 evenimente verificate manual, cel mult o citire greșită) și înlocuirea detectorului black-box cu un model antrenat de mine.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Proiect individual &middot; aplicație end-to-end pe hardware embedded &middot; codul, planul și deciziile de design sunt în repo.
+  </footer>
+
+</div>
