@@ -1,3 +1,18 @@
+> **Starea curentă nu e în fișierul ăsta.** Ea stă în
+> `C:\Users\40747\OneDrive\Documents\AIS-OS\Embedded-CV\jetson-car-logger\CLAUDE.md`
+> și în `C:\Users\40747\OneDrive\Documents\AIS-OS\Embedded-CV\memory\stare.md`.
+> Citește-le întâi.
+>
+> Ce urmează mai jos e designul din 24 aprilie 2026, scris înainte să existe cod.
+> Filozofia de învățare, regulile tehnice, footgun-urile, modelul de date și lista
+> de scope creep sînt valabile și azi. Trei lucruri au rămas în urmă: proiectul e
+> construit, nu de construit, cu v2 închis pe 19 iulie 2026 la versiunea 0.6.0;
+> citirea plăcuțelor s-a mutat local, cu onnxruntime 1.9, deci Plate Recognizer nu
+> mai e calea principală; iar tabelul cu procentul de Claude Code pe săptămâni e din
+> faza de planificare.
+
+---
+
 # CLAUDE.md — Jetson Car Logger
 
 This file tells Claude Code about the project. Read it before generating
